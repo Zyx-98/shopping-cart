@@ -1,0 +1,108 @@
+@startuml
+entity Users {
+    *id: number <<generated>>
+    --
+    uuid: uuid
+    name: string
+    email: string
+    password: string
+}
+
+entity Products {
+    *id: number <<generated>>
+    --
+    uuid: uuid 
+    name: string 
+    item_price: decimal
+}
+
+entity Customers {
+    *id: number <<generated>>
+    --
+    uuid: uuid 
+    user_id: number <<FK>>
+    name: string
+    email: string 
+    address: string
+    phone: string
+}
+
+entity Carts { 
+    *id: number <<generated>>
+    --
+    uuid: uuid
+    customer_id number <<FK>>
+}
+
+entity CartItems {
+    id: number <<generated>>
+    --
+    uuid: uuid
+    card_id number <<FK>>
+    product_id number <<FK>>
+    quantity int
+}
+
+entity Orders {
+    id: number <<generated>>
+    --
+    uuid: uuid
+    customer_id number <<FK>>
+    cart_id number <<FK>>
+    coupon_id number <<FK>>
+    state string
+    invoice_path string
+    canceled_at datetime
+    completed_at datetime
+} 
+
+entity OrderLines {
+    id: number <<generated>>
+    --
+    uuid: uuid
+    order_id number <<FK>>
+    product_id number <<FK>>
+    description string
+    quantity int
+}
+
+entity Payments {
+    id: number <<generated>>
+    --
+    uuid: uuid
+    order_id number <<FK>>
+    state string
+    total_item_price decimal
+    failed_at datetime
+    paid_at datetime
+}
+
+entity Inventories {
+    id: number <<generated>>
+    --
+    uuid: uuid
+    product_id number <<FK>>
+    quantity int
+}
+
+entity Coupons {
+    *id: string <<generated>>
+    --
+    uuid string
+    code string
+    reduction int
+}
+
+Customers }o--|| Users
+Customers ||--o{ Orders
+Orders ||--|{ OrderLines
+Orders ||-|| Carts
+OrderLines }|--|| Products
+Carts }o--|| Customers
+Carts ||--|{ CartItems
+CartItems }|--|| Products
+Payments ||--|| Orders
+Inventories ||--|| Products
+
+
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+package core <<Frame>> {
+    package domain <<Frame>> {
+        package user <<Frame>> {
+            class User {
+               - uuid: uuid
+               - name: string
+               - email: string
+               - password: string
+            }
+        }
+        package product <<Frame>> {
+            class Product {
+                +uuid: uuid
+                +name: string
+                +item_price: int
+            }
+        }
+        package customer <<Frame>> {
+            class Customer {
+                +uuid: uuid
+                +user_id: number <<FK>>
+                +name: string
+                +email: string
+                +address: string
+                +phone: string
+            }
+        }
+    }
+}
+@enduml
