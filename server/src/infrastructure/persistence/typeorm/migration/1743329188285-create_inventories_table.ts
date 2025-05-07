@@ -7,7 +7,9 @@ export class CreateInventoriesTable1743329188285 implements MigrationInterface {
                 id SERIAL PRIMARY KEY,
                 uuid UUID NOT NULL UNIQUE,
                 product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-                quantity INT NOT NULL DEFAULT 0
+                quantity INT NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
             );
         `);
   }

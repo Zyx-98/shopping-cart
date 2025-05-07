@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Global, Module } from '@nestjs/common';
+import { TypeormPersistenceModule } from './typeorm/typeorm-persistence.module';
 
+@Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([])],
-  providers: [],
-  exports: [],
+  imports: [TypeormPersistenceModule],
+  exports: [TypeormPersistenceModule],
 })
 export class PersistenceModule {}

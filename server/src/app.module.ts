@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { AppDataSource } from './config/typeorm.config';
+import { PresentationModule } from './presentation/presentation.module';
+import { InfrastructureModule } from './infrastructure/infrastructure.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), // Load environment variables
-    TypeOrmModule.forRoot(AppDataSource.options),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }), // Load environment variables
+    InfrastructureModule,
+    PresentationModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

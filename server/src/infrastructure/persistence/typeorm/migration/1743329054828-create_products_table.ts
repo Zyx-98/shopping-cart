@@ -1,23 +1,22 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCustomersTable1743329069345 implements MigrationInterface {
+export class CreateProductsTable1743329054828 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS customers (
+      CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
         uuid UUID NOT NULL UNIQUE,
-        user_id id NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) NOT NULL,
-        address TEXT NOT NULL,
-        phone VARCHAR(20) NOT NULL
+        item_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      DROP TABLE IF EXISTS customers;
+      DROP TABLE IF EXISTS products;
     `);
   }
 }

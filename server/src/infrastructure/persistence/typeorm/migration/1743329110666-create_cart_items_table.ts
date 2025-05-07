@@ -1,18 +1,14 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateOrdersTable1743329131070 implements MigrationInterface {
+export class CreateCartItemsTable1743329110666 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-        CREATE TABLE IF NOT EXISTS orders (
+        CREATE TABLE IF NOT EXISTS cart_items (
             id SERIAL PRIMARY KEY,
             uuid UUID NOT NULL UNIQUE,
             cart_id INT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
-            customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-            coupon_id INT NULL REFERENCES coupons(id) ON DELETE CASCADE,
-            state varchar(50) NOT NULL,
-            invoice_path text NULL
-            canceled_at TIMESTAMP NULL,
-            completed_at TIMESTAMP NULL,
+            product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+            quantity INT NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
@@ -21,7 +17,7 @@ export class CreateOrdersTable1743329131070 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-        DROP TABLE IF EXISTS orders;
+        DROP TABLE IF EXISTS cart_items;
         `);
   }
 }

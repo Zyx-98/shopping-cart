@@ -1,0 +1,33 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy } from 'passport-local';
+import { AuthenticatedUserDto } from 'src/core/application/auth/dtos/authenticated-user.dto';
+import { ValidateUserCommand } from 'src/core/application/command/validate-user/validate-user.command';
+import { ValidateUserHandler } from 'src/core/application/command/validate-user/validate-user.handler';
+
+@Injectable()
+export class LocalStrategy extends PassportStrategy(Strategy) {
+  constructor(private readonly validateUserHandler: ValidateUserHandler) {
+    super({
+      usernameField: 'email',
+    });
+  }
+
+  async validate(
+    email: string,
+    plainPassword: string,
+  ): Promise<AuthenticatedUserDto> {
+    try {
+      const command = new ValidateUserCommand(email, plainPassword);
+      const userDto = await this.validateUserHandler.execute(command);
+
+      return userDto;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new UnauthorizedException('Authentication failed.');
+    }
+  }
+}
