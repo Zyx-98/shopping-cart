@@ -3,9 +3,9 @@ import {
   IUserRepository,
   USER_REPOSITORY,
 } from 'src/core/domain/user/repositories/user.repository';
-import { HASHING_SERVICE, IHashingService } from '../../ports/hasing.service';
+import { HASHING_SERVICE, IHashingService } from '../../../ports/hasing.service';
 import { ValidateUserCommand } from './validate-user.command';
-import { AuthenticatedUserDto } from '../../auth/dtos/authenticated-user.dto';
+import { AuthenticatedUserDto } from '../../dtos/authenticated-user.dto';
 
 @Injectable()
 export class ValidateUserHandler {

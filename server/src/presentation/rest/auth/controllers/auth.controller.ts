@@ -14,12 +14,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LoginHandler } from 'src/core/application/command/login/login.handler';
+import { LoginHandler } from 'src/core/application/auth/command/login/login.handler';
 import { LocalAuthGuard } from 'src/infrastructure/auth/guards/local.guard';
 import { LoginRequestDto } from '../dtos/login-request.dto';
 import { AuthenticatedUserDto } from 'src/core/application/auth/dtos/authenticated-user.dto';
 import { AuthTokenDto } from 'src/core/application/auth/dtos/auth-token.dto';
-import { LoginCommand } from 'src/core/application/command/login/login.command';
+import { LoginCommand } from 'src/core/application/auth/command/login/login.command';
 import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
 
 interface RequestWithUser extends Request {

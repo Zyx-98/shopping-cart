@@ -3,9 +3,9 @@ import {
   ITokenService,
   TOKEN_SERVICE,
   TokenPayload,
-} from '../../ports/token.service';
+} from '../../../ports/token.service';
 import { LoginCommand } from './login.command';
-import { AuthTokenDto } from '../../auth/dtos/auth-token.dto';
+import { AuthTokenDto } from '../../dtos/auth-token.dto';
 
 @Injectable()
 export class LoginHandler {

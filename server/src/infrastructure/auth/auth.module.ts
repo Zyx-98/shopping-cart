@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ValidateUserHandler } from 'src/core/application/command/validate-user/validate-user.handler';
+import { ValidateUserHandler } from 'src/core/application/auth/command/validate-user/validate-user.handler';
 import { HASHING_SERVICE } from 'src/core/application/ports/hasing.service';
 import { BcryptHashingService } from './services/bcrypt-hashing.service';
 import { TOKEN_SERVICE } from 'src/core/application/ports/token.service';
