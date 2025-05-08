@@ -9,6 +9,7 @@ export class CreateCartItemsTable1743329110666 implements MigrationInterface {
             cart_id INT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
             product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
             quantity INT NOT NULL DEFAULT 1,
+            price NUMERIC(10, 2) NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
