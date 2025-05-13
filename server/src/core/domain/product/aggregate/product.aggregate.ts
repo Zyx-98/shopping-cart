@@ -2,6 +2,12 @@ import { AggregateRoot } from '@nestjs/cqrs';
 import { ProductId } from '../value-objects/product-id.vo';
 import { Price } from '../../shared/domain/value-objects/price.vo';
 
+interface ProductProps {
+  id: ProductId;
+  name: string;
+  price: Price;
+}
+
 export class ProductAggregate extends AggregateRoot {
   private _productId: ProductId;
   private _name: string;
@@ -12,6 +18,10 @@ export class ProductAggregate extends AggregateRoot {
     this._productId = productId;
     this._name = name;
     this._itemPrice = itemPrice;
+  }
+
+  public static reconstitute(props: ProductProps): ProductAggregate {
+    return new ProductAggregate(props.id, props.name, props.price);
   }
 
   get productId(): ProductId {

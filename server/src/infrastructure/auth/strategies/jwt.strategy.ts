@@ -2,7 +2,7 @@ import { Inject, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthenticatedUserDto } from 'src/core/application/auth/dtos/authenticated-user.dto';
+import { AuthenticatedUserDto } from 'src/core/application/auth/dto/authenticated-user.dto';
 import { TokenPayload } from 'src/core/application/ports/token.service';
 import {
   IUserRepository,
@@ -36,6 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const authUserDto = new AuthenticatedUserDto();
     authUserDto.id = payload.sub;
     authUserDto.email = user.getEmail().toString();
+    authUserDto.customerId = payload.customerId;
 
     return authUserDto;
   }

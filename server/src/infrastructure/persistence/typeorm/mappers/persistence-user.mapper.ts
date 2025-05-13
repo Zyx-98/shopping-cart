@@ -7,7 +7,7 @@ import { Password } from 'src/core/domain/user/value-objects/password.vo';
 import { DeepPartial } from 'typeorm';
 
 @Injectable()
-export class UserMapper {
+export class PersistenceUserMapper {
   toDomain(schema: UserSchema): UserAggregate {
     return UserAggregate.reconstitute({
       id: UserId.create(schema.uuid),

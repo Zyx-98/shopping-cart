@@ -39,11 +39,27 @@ export class CartAggregate extends AggregateRoot {
     return this._cartId;
   }
 
+  get customerId(): CustomerId {
+    return this._customerId;
+  }
+
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
+
   get cartItems(): ReadonlyArray<CartItem> {
     return Object.freeze([...this._cartItems]);
   }
 
-  public initializeCart(customerId: CustomerId): CartAggregate {
+  public static reconstitute(props: CartProps): CartAggregate {
+    return new CartAggregate(props);
+  }
+
+  public static initializeCart(customerId: CustomerId): CartAggregate {
     const cart = new CartAggregate({
       cartId: CartId.create(),
       cartItems: [],
@@ -74,9 +90,9 @@ export class CartAggregate extends AggregateRoot {
     } else {
       const newItem = new CartItem(
         null,
+        this._cartId,
         productId,
         quantity,
-        this._cartId,
         price,
       );
       this._cartItems.push(newItem);

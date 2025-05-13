@@ -4,6 +4,14 @@ import { Quantity } from '../../shared/domain/value-objects/quantity.vo';
 import { CartId } from '../value-objects/cart-id.vo';
 import { CartItemId } from '../value-objects/cart-item-id.vo';
 
+interface CartItemProps {
+  id: CartItemId;
+  cartId: CartId;
+  productId: ProductId;
+  quantity: Quantity;
+  price: Price;
+}
+
 export class CartItem {
   private _cartItemId: CartItemId;
   private _cartId: CartId;
@@ -13,9 +21,9 @@ export class CartItem {
 
   constructor(
     cartItemId: CartItemId | null,
+    cartId: CartId,
     productId: ProductId,
     quantity: Quantity,
-    cartId: CartId,
     price: Price,
   ) {
     this._cartItemId = cartItemId || CartItemId.create();
@@ -23,6 +31,20 @@ export class CartItem {
     this._productId = productId;
     this._quantity = quantity;
     this._priceAtAddition = price;
+  }
+
+  public static reconstitute(props: CartItemProps): CartItem {
+    return new CartItem(
+      props.id,
+      props.cartId,
+      props.productId,
+      props.quantity,
+      props.price,
+    );
+  }
+
+  get cartItemId(): CartItemId {
+    return this._cartItemId;
   }
 
   get productId(): ProductId {

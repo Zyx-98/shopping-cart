@@ -3,14 +3,23 @@ import {
   IUserRepository,
   USER_REPOSITORY,
 } from 'src/core/domain/user/repositories/user.repository';
-import { HASHING_SERVICE, IHashingService } from '../../../ports/hasing.service';
+import {
+  HASHING_SERVICE,
+  IHashingService,
+} from '../../../ports/hasing.service';
 import { ValidateUserCommand } from './validate-user.command';
-import { AuthenticatedUserDto } from '../../dtos/authenticated-user.dto';
+import { AuthenticatedUserDto } from '../../dto/authenticated-user.dto';
+import {
+  CUSTOMER_REPOSITORY,
+  ICustomerRepository,
+} from 'src/core/domain/customer/repositories/customer.repository';
 
 @Injectable()
 export class ValidateUserHandler {
   constructor(
     @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    @Inject(CUSTOMER_REPOSITORY)
+    private readonly customerRepository: ICustomerRepository,
     @Inject(HASHING_SERVICE) private readonly hashingService: IHashingService,
   ) {}
 
@@ -32,9 +41,14 @@ export class ValidateUserHandler {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const customer = await this.customerRepository.findByUserId(
+      user.getUserId(),
+    );
+
     const authUserDto = new AuthenticatedUserDto();
     authUserDto.id = user.getUserId().toString();
     authUserDto.email = user.getEmail().toString();
+    authUserDto.customerId = customer?.customerId?.toString() || null;
 
     return authUserDto;
   }

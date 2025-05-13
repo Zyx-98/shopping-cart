@@ -3,21 +3,60 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_REPOSITORY } from 'src/core/domain/user/repositories/user.repository';
 import { UserRepository } from './repositories/user.repository';
 import { UserSchema } from './entities/user.schema';
-import { UserMapper } from './mappers/user.mapper';
+import { PersistenceUserMapper } from './mappers/persistence-user.mapper';
 import { typeOrmAsyncConfig } from './typeorm.config';
+import { PersistenceCustomerMapper } from './mappers/persistence-customer.mapper';
+import { CUSTOMER_REPOSITORY } from 'src/core/domain/customer/repositories/customer.repository';
+import { CustomerRepository } from './repositories/customer.repository';
+import { CustomerSchema } from './entities/customer.schema';
+import { PersistenceProductMapper } from './mappers/persistence-product.mapper';
+import { PersistenceCartMapper } from './mappers/persistence-cart.mapper';
+import { CART_REPOSITORY } from 'src/core/domain/cart/repositories/cart.repository';
+import { CartRepository } from './repositories/cart.repository';
+import { PRODUCT_REPOSITORY } from 'src/core/domain/product/repositories/product.repository';
+import { ProductRepository } from './repositories/product.repository';
+import { ProductSchema } from './entities/product.schema';
+import { CartSchema } from './entities/cart.schema';
+import { CartItemSchema } from './entities/cart-item.schema';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserSchema]),
+    TypeOrmModule.forFeature([
+      UserSchema,
+      CustomerSchema,
+      ProductSchema,
+      CartSchema,
+      CartItemSchema,
+    ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
   ],
   providers: [
-    UserMapper,
+    PersistenceUserMapper,
+    PersistenceCustomerMapper,
+    PersistenceProductMapper,
+    PersistenceCartMapper,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
     },
+    {
+      provide: CUSTOMER_REPOSITORY,
+      useClass: CustomerRepository,
+    },
+    {
+      provide: PRODUCT_REPOSITORY,
+      useClass: ProductRepository,
+    },
+    {
+      provide: CART_REPOSITORY,
+      useClass: CartRepository,
+    },
   ],
-  exports: [USER_REPOSITORY],
+  exports: [
+    USER_REPOSITORY,
+    CUSTOMER_REPOSITORY,
+    PRODUCT_REPOSITORY,
+    CART_REPOSITORY,
+  ],
 })
 export class TypeormPersistenceModule {}

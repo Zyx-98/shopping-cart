@@ -2,6 +2,7 @@ export const TOKEN_SERVICE = Symbol('ITokenService');
 
 export interface TokenPayload {
   sub: string; // User ID (subject)
+  customerId: string | null;
   // roles: string[]; // User roles
   // Add other relevant payload data (e.g., email)
 }

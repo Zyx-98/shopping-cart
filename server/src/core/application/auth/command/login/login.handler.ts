@@ -5,7 +5,7 @@ import {
   TokenPayload,
 } from '../../../ports/token.service';
 import { LoginCommand } from './login.command';
-import { AuthTokenDto } from '../../dtos/auth-token.dto';
+import { AuthTokenDto } from '../../dto/auth-token.dto';
 
 @Injectable()
 export class LoginHandler {
@@ -18,6 +18,7 @@ export class LoginHandler {
 
     const payload: Omit<TokenPayload, 'iat' | 'exp'> = {
       sub: user.id,
+      customerId: user.customerId,
     };
 
     const tokens = await this.tokenService.generateTokens(payload);

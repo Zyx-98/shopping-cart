@@ -4,13 +4,13 @@ import { IUserRepository } from 'src/core/domain/user/repositories/user.reposito
 import { UserId } from 'src/core/domain/user/value-objects/user-id.vo';
 import { UserSchema } from '../entities/user.schema';
 import { Repository } from 'typeorm';
-import { UserMapper } from '../mappers/user.mapper';
+import { PersistenceUserMapper } from '../mappers/persistence-user.mapper';
 
 export class UserRepository implements IUserRepository {
   constructor(
     @InjectRepository(UserSchema)
     private readonly ormRepository: Repository<UserSchema>,
-    private readonly mapper: UserMapper,
+    private readonly mapper: PersistenceUserMapper,
   ) {}
 
   async findByEmail(email: string): Promise<UserAggregate | null> {

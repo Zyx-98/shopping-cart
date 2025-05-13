@@ -17,14 +17,11 @@ import {
 import { LoginHandler } from 'src/core/application/auth/command/login/login.handler';
 import { LocalAuthGuard } from 'src/infrastructure/auth/guards/local.guard';
 import { LoginRequestDto } from '../dtos/login-request.dto';
-import { AuthenticatedUserDto } from 'src/core/application/auth/dtos/authenticated-user.dto';
-import { AuthTokenDto } from 'src/core/application/auth/dtos/auth-token.dto';
+import { AuthenticatedUserDto } from 'src/core/application/auth/dto/authenticated-user.dto';
+import { AuthTokenDto } from 'src/core/application/auth/dto/auth-token.dto';
 import { LoginCommand } from 'src/core/application/auth/command/login/login.command';
 import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
-
-interface RequestWithUser extends Request {
-  user: AuthenticatedUserDto;
-}
+import { RequestWithUser } from '../shared/request/request-with-user.request';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -50,7 +47,7 @@ export class AuthController {
     return this.loginHandler.execute(command);
   }
 
-  @Get('profile')
+  @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the profile of the currently logged-in user' })
@@ -63,7 +60,7 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized (Token invalid or missing)',
   })
-  getProfile(@Req() req: RequestWithUser): AuthenticatedUserDto {
+  getMe(@Req() req: RequestWithUser): AuthenticatedUserDto {
     return req.user;
   }
 }

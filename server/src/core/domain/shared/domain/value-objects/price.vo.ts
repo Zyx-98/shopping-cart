@@ -10,7 +10,7 @@ export class Price {
     Object.freeze(this);
   }
 
-  public static create(amount: number, currency: string): Price {
+  public static create(amount: number, currency: string = 'USD'): Price {
     this.validate(amount, currency);
     const normalizedCurrency = currency.trim().toUpperCase();
     return new Price(amount, normalizedCurrency);
