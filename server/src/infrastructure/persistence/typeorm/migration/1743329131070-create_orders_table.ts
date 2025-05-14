@@ -6,7 +6,6 @@ export class CreateOrdersTable1743329131070 implements MigrationInterface {
         CREATE TABLE IF NOT EXISTS orders (
             id SERIAL PRIMARY KEY,
             uuid UUID NOT NULL UNIQUE,
-            cart_id INT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
             customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
             coupon_id INT NULL REFERENCES coupons(id) ON DELETE CASCADE,
             state varchar(50) NOT NULL,

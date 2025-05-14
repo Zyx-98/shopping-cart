@@ -1,13 +1,9 @@
 import { OrderAggregate } from '../aggregate/order.aggregate';
+import { OrderState } from '../enum/order-state.enum';
 
-export abstract class OrderState {
-  protected abstract value: string;
-
-  public getStateValue(): string {
-    return this.value;
-  }
-
-  abstract pending(order: OrderAggregate): void;
-  abstract completed(order: OrderAggregate): void;
-  abstract canceled(order: OrderAggregate): void;
+export interface IOrderState {
+  state: OrderState;
+  pending(order: OrderAggregate): void;
+  completed(order: OrderAggregate): void;
+  canceled(order: OrderAggregate): void;
 }

@@ -35,7 +35,7 @@ export class PersistenceCartMapper {
     );
 
     return CartAggregate.reconstitute({
-      cartId: CartId.create(schema.uuid),
+      id: CartId.create(schema.uuid),
       cartItems,
       customerId: CustomerId.create(schema.customer.uuid),
       createdAt: schema.createdAt,
@@ -89,7 +89,7 @@ export class PersistenceCartMapper {
     }, [] as DeepPartial<CartItemSchema>[]);
 
     return {
-      uuid: aggregate.cartId.toString(),
+      uuid: aggregate.id.toString(),
       customer,
       createdAt: aggregate.createdAt,
       updatedAt: aggregate.updatedAt,

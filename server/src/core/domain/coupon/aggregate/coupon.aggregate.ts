@@ -1,30 +1,26 @@
-import { AggregateRoot } from '@nestjs/cqrs';
 import { CouponId } from '../value-objects/coupon-id.vo';
 import { CouponCode } from '../value-objects/coupon-code.vo';
 import { CouponType } from '../value-objects/coupon-type.co';
 import { CouponReduction } from '../value-objects/coupon-reduction.vo';
+import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 
-export class CouponAggregate extends AggregateRoot {
-  private _couponId: CouponId;
+export interface CouponProps {
+  id: CouponId;
+  couponCode: CouponCode;
+  couponType: CouponType;
+  reduction: CouponReduction;
+}
+
+export class CouponAggregate extends BaseAggregateRoot<CouponId> {
   private _couponCode: CouponCode;
   private _couponType: CouponType;
   private _reduction: CouponReduction;
 
-  public constructor(
-    couponId: CouponId,
-    couponCode: CouponCode,
-    couponType: CouponType,
-    reduction: CouponReduction,
-  ) {
-    super();
-    this._couponId = couponId;
-    this._couponCode = couponCode;
-    this._couponType = couponType;
-    this._reduction = reduction;
-  }
-
-  get couponId(): CouponId {
-    return this._couponId;
+  public constructor(props: CouponProps) {
+    super(props.id);
+    this._couponCode = props.couponCode;
+    this._couponType = props.couponType;
+    this._reduction = props.reduction;
   }
 
   get couponCode(): CouponCode {

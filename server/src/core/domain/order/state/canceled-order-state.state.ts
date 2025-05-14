@@ -1,7 +1,8 @@
-import { OrderState } from './order-state.state';
+import { OrderState } from '../enum/order-state.enum';
+import { IOrderState } from './order-state.state';
 
-export class CanceledOrderState extends OrderState {
-  protected value = 'canceled';
+export class CanceledOrderState implements IOrderState {
+  public state = OrderState.CANCELED;
 
   public pending(): void {
     throw new Error('Order is already canceled');

@@ -1,36 +1,32 @@
-import { AggregateRoot } from '@nestjs/cqrs';
 import { PaymentId } from '../value-object/payment-id.vo';
 import { Price } from '../../shared/domain/value-object/price.vo';
-import { PaymentState } from '../states/payment-state.state';
+import { IPaymentState } from '../states/payment-state.state';
+import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 
-export class PaymentAggregate extends AggregateRoot {
-  private _paymentId: PaymentId;
-  private _state: PaymentState;
+export interface PaymentProps {
+  id: PaymentId;
+  state: IPaymentState;
+  totalItemPrice: Price;
+  failedAt: Date | null;
+  paidAt: Date | null;
+}
+
+export class PaymentAggregate extends BaseAggregateRoot<PaymentId> {
+  private _state: IPaymentState;
   private _totalItemPrice: Price;
   private _failedAt: Date | null;
   private _paidAt: Date | null;
 
-  constructor(
-    paymentId: PaymentId,
-    state: PaymentState,
-    totalItemPrice: Price,
-    failedAt: Date | null,
-    paidAt: Date | null,
-  ) {
-    super();
-    this._paymentId = paymentId;
-    this._state = state;
-    this._totalItemPrice = totalItemPrice;
-    this._failedAt = failedAt;
-    this._paidAt = paidAt;
-  }
-
-  get paymentId(): PaymentId {
-    return this._paymentId;
+  constructor(props: PaymentProps) {
+    super(props.id);
+    this._state = props.state;
+    this._totalItemPrice = props.totalItemPrice;
+    this._failedAt = props.failedAt;
+    this._paidAt = props.paidAt;
   }
 
   get state(): string {
-    return this._state.getStateValue();
+    return this._state.state;
   }
 
   get totalItemPrice(): Price {
@@ -45,7 +41,7 @@ export class PaymentAggregate extends AggregateRoot {
     return this._paidAt;
   }
 
-  setState(state: PaymentState): void {
+  setState(state: IPaymentState): void {
     this._state = state;
   }
 }

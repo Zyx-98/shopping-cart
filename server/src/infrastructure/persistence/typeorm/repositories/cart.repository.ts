@@ -51,7 +51,7 @@ export class CartRepository implements ICartRepository {
     const persistence = await this.mapper.toPersistence(entity);
 
     let cart = await this.ormRepository.findOne({
-      where: { uuid: entity.cartId.toString() },
+      where: { uuid: entity.id.toString() },
       relations: {
         cartItems: true,
       },

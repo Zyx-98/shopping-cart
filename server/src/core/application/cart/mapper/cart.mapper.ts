@@ -8,7 +8,7 @@ import { CartItemDto } from '../dto/cart-item.dto';
 export class CartMapper {
   public toDto(aggregate: CartAggregate): CartDto {
     const cartDto = new CartDto();
-    cartDto.id = aggregate.cartId.toString();
+    cartDto.id = aggregate.id.toString();
     cartDto.totalPrice = aggregate.getTotalPrice().amount;
     cartDto.cartItems = aggregate.cartItems.map((item) => this.itemToDto(item));
 

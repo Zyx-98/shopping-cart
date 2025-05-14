@@ -48,7 +48,7 @@ export class ValidateUserHandler {
     const authUserDto = new AuthenticatedUserDto();
     authUserDto.id = user.getUserId().toString();
     authUserDto.email = user.getEmail().toString();
-    authUserDto.customerId = customer?.customerId?.toString() || null;
+    authUserDto.customerId = customer?.id?.toString() || null;
 
     return authUserDto;
   }

@@ -1,7 +1,8 @@
-import { OrderState } from './order-state.state';
+import { OrderState } from '../enum/order-state.enum';
+import { IOrderState } from './order-state.state';
 
-export class CompletedOrderState extends OrderState {
-  protected value = 'completed';
+export class CompletedOrderState implements IOrderState {
+  public state = OrderState.COMPLETED;
 
   public pending(): void {
     throw new Error('Order is already completed');

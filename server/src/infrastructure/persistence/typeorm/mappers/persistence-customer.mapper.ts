@@ -17,7 +17,7 @@ export class PersistenceCustomerMapper {
 
   toPersistence(aggregate: CustomerAggregate): DeepPartial<CustomerSchema> {
     return {
-      uuid: aggregate.customerId.toString(),
+      uuid: aggregate.id.toString(),
       email: aggregate.email,
       name: aggregate.name,
     };

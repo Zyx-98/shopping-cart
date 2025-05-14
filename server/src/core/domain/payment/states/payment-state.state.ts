@@ -1,13 +1,9 @@
 import { PaymentAggregate } from '../aggregate/payment.aggregate';
+import { PaymentState } from '../enum/payment-state.enum';
 
-export abstract class PaymentState {
-  protected abstract value: string;
-
-  public getStateValue(): string {
-    return this.value;
-  }
-
-  abstract open(payment: PaymentAggregate): void;
-  abstract pay(payment: PaymentAggregate): void;
-  abstract fail(payment: PaymentAggregate): void;
+export interface IPaymentState {
+  state: PaymentState;
+  open(payment: PaymentAggregate): void;
+  pay(payment: PaymentAggregate): void;
+  fail(payment: PaymentAggregate): void;
 }

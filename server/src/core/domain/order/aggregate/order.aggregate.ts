@@ -1,60 +1,85 @@
-import { AggregateRoot } from '@nestjs/cqrs';
 import { OrderId } from '../value-object/order-id.vo';
 import { CartId } from '../../cart/value-object/cart-id.vo';
 import { CouponId } from '../../coupon/value-objects/coupon-id.vo';
-import { OrderState } from '../state/order-state.state';
+import { IOrderState } from '../state/order-state.state';
+import { OrderLine } from '../entity/order-line.entity';
+import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
+import { CustomerId } from '../../customer/value-object/customer-id.vo';
 
-export class OrderAggregate extends AggregateRoot {
-  private _orderId: OrderId;
-  private _cartId: CartId;
-  private _couponId: CouponId;
+export interface OrderProps {
+  id: OrderId;
+  cartId: CartId;
+  customerId: CustomerId;
+  couponId: CouponId | null;
+  orderLines: OrderLine[];
+  state: IOrderState;
+  invoicePath?: string | null;
+  canceledAt?: Date | null;
+  completedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  private _state: OrderState;
-  private _invoicePath: string;
-  private _canceledAt: Date | null;
-  private _completedAt: Date | null;
+export class OrderAggregate extends BaseAggregateRoot<OrderId> {
+  private _customerId: CustomerId;
+  private _couponId: CouponId | null;
+  private _orderLines: OrderLine[];
+  private _state: IOrderState;
+  private _invoicePath?: string | null;
+  private _canceledAt?: Date | null;
+  private _completedAt?: Date | null;
+  private _createdAt: Date;
+  private _updatedAt: Date;
 
-  constructor(
-    orderId: OrderId,
-    cartId: CartId,
-    couponId: CouponId,
-    state: OrderState, // e.g., 'pending', 'completed', 'canceled'
-    invoicePath: string,
-    canceledAt: Date | null,
-    completedAt: Date | null,
-  ) {
-    super();
-    this._orderId = orderId;
-    this._cartId = cartId;
-    this._couponId = couponId;
-    this._state = state;
-    this._invoicePath = invoicePath;
-    this._canceledAt = canceledAt;
-    this._completedAt = completedAt;
+  constructor(props: OrderProps) {
+    super(props.id);
+    this._customerId = props.customerId;
+    this._couponId = props.couponId;
+    this._state = props.state;
+    this._invoicePath = props.invoicePath;
+    this._canceledAt = props.canceledAt;
+    this._completedAt = props.completedAt;
+    this._createdAt = props.createdAt;
+    this._updatedAt = props.updatedAt;
   }
-  get orderId(): OrderId {
-    return this._orderId;
+
+  get customerId(): CustomerId {
+    return this._customerId;
   }
-  get cartId(): CartId {
-    return this._cartId;
-  }
-  get couponId(): CouponId {
+
+  get couponId(): CouponId | null {
     return this._couponId;
   }
+
   get state(): string {
-    return this._state.getStateValue();
+    return this._state.state;
   }
-  get invoicePath(): string {
+
+  get invoicePath(): string | null | undefined {
     return this._invoicePath;
   }
-  get canceledAt(): Date | null {
+
+  get canceledAt(): Date | null | undefined {
     return this._canceledAt;
   }
-  get completedAt(): Date | null {
+
+  get completedAt(): Date | null | undefined {
     return this._completedAt;
   }
 
-  setState(state: OrderState): void {
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
+
+  get orderLines(): OrderLine[] {
+    return this._orderLines;
+  }
+
+  setState(state: IOrderState): void {
     this._state = state;
   }
 }

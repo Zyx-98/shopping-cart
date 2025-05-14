@@ -1,7 +1,8 @@
-import { PaymentState } from './payment-state.state';
+import { PaymentState } from '../enum/payment-state.enum';
+import { IPaymentState } from './payment-state.state';
 
-export class PaidPaymentState extends PaymentState {
-  protected value = 'open';
+export class PaidPaymentState implements IPaymentState {
+  public state = PaymentState.PAID;
 
   public open(): void {
     throw new Error('Payment is already paid');

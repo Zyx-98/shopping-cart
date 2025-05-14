@@ -1,31 +1,25 @@
-import { AggregateRoot } from '@nestjs/cqrs';
 import { ProductId } from '../value-object/product-id.vo';
 import { Price } from '../../shared/domain/value-object/price.vo';
+import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 
-interface ProductProps {
+export interface ProductProps {
   id: ProductId;
   name: string;
   price: Price;
 }
 
-export class ProductAggregate extends AggregateRoot {
-  private _productId: ProductId;
+export class ProductAggregate extends BaseAggregateRoot<ProductId> {
   private _name: string;
   private _itemPrice: Price;
 
-  constructor(productId: ProductId, name: string, itemPrice: Price) {
-    super();
-    this._productId = productId;
-    this._name = name;
-    this._itemPrice = itemPrice;
+  constructor(props: ProductProps) {
+    super(props.id);
+    this._name = props.name;
+    this._itemPrice = props.price;
   }
 
   public static reconstitute(props: ProductProps): ProductAggregate {
-    return new ProductAggregate(props.id, props.name, props.price);
-  }
-
-  get productId(): ProductId {
-    return this._productId;
+    return new ProductAggregate(props);
   }
 
   get name(): string {

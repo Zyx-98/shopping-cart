@@ -1,10 +1,11 @@
 import { OrderAggregate } from '../aggregate/order.aggregate';
+import { OrderState } from '../enum/order-state.enum';
 import { CanceledOrderState } from './canceled-order-state.state';
 import { CompletedOrderState } from './completed-order-state.state';
-import { OrderState } from './order-state.state';
+import { IOrderState } from './order-state.state';
 
-export class PendingOrderState extends OrderState {
-  protected value = 'pending';
+export class PendingOrderState implements IOrderState {
+  public state = OrderState.PENDING;
 
   public pending(): void {
     throw new Error('Order is already pending');

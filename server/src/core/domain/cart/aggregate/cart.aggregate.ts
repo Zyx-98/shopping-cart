@@ -1,4 +1,3 @@
-import { AggregateRoot } from '@nestjs/cqrs';
 import { CartId } from '../value-object/cart-id.vo';
 import { CartItem } from '../entity/cart-item.entity';
 import { CustomerId } from '../../customer/value-object/customer-id.vo';
@@ -6,20 +5,21 @@ import { ProductId } from '../../product/value-object/product-id.vo';
 import { Quantity } from '../../shared/domain/value-object/quantity.vo';
 import { Price } from '../../shared/domain/value-object/price.vo';
 import { ProductNotInCartException } from '../exception/product-not-in-cart-exception';
-// import { CartInitializedEvent } from '../events/cart-initialized.event';
-// import { CartAddedToCartItemEvent } from '../events/cart-added-to-cart-item.event';
-// import { CartItemRemovedFromCartEvent } from '../events/cart-item-removed-from-cart-event.event';
-// import { CartItemQuantityUpdatedEvent } from '../events/cart-item-quantity-updated.event';
+import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
+// import { CartInitializedEvent } from '../event/cart-initialized.event';
+// import { CartAddedToCartItemEvent } from '../event/cart-added-to-cart-item.event';
+// import { CartItemRemovedFromCartEvent } from '../event/cart-item-removed-from-cart-event.event';
+// import { CartItemQuantityUpdatedEvent } from '../event/cart-item-quantity-updated.event';
 
-interface CartProps {
-  cartId: CartId;
+export interface CartProps {
+  id: CartId;
   cartItems: CartItem[];
   customerId: CustomerId;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export class CartAggregate extends AggregateRoot {
+export class CartAggregate extends BaseAggregateRoot<CartId> {
   private _cartId: CartId;
   private _cartItems: CartItem[] = [];
   private _customerId: CustomerId;
@@ -27,16 +27,11 @@ export class CartAggregate extends AggregateRoot {
   private _updatedAt: Date;
 
   private constructor(props: CartProps) {
-    super();
-    this._cartId = props.cartId;
+    super(props.id);
     this._cartItems = props.cartItems;
     this._customerId = props.customerId;
     this._createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
-  }
-
-  get cartId(): CartId {
-    return this._cartId;
   }
 
   get customerId(): CustomerId {
@@ -61,7 +56,7 @@ export class CartAggregate extends AggregateRoot {
 
   public static initializeCart(customerId: CustomerId): CartAggregate {
     const cart = new CartAggregate({
-      cartId: CartId.create(),
+      id: CartId.create(),
       cartItems: [],
       customerId: customerId,
       createdAt: new Date(),
