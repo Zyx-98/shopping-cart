@@ -1,5 +1,4 @@
 import { OrderId } from '../value-object/order-id.vo';
-import { CartId } from '../../cart/value-object/cart-id.vo';
 import { CouponId } from '../../coupon/value-objects/coupon-id.vo';
 import { IOrderState } from '../state/order-state.state';
 import { OrderLine, OrderLineProps } from '../entity/order-line.entity';
