@@ -1,16 +1,14 @@
 import { OrderState } from '../enum/order-state.enum';
+import { OrderStateTransitionException } from '../exception/order-state-transition.exception';
 import { IOrderState } from './order-state.state';
 
 export class CanceledOrderState implements IOrderState {
   public state = OrderState.CANCELED;
 
-  public pending(): void {
-    throw new Error('Order is already canceled');
+  public complete(): void {
+    throw new OrderStateTransitionException(this.state, OrderState.COMPLETED);
   }
-  public completed(): void {
-    throw new Error('Order is already canceled');
-  }
-  public canceled(): void {
-    throw new Error('Order is already canceled');
+  public cancel(): void {
+    throw new OrderStateTransitionException(this.state, OrderState.CANCELED);
   }
 }

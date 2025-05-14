@@ -2,15 +2,17 @@ import { OrderId } from '../value-object/order-id.vo';
 import { CartId } from '../../cart/value-object/cart-id.vo';
 import { CouponId } from '../../coupon/value-objects/coupon-id.vo';
 import { IOrderState } from '../state/order-state.state';
-import { OrderLine } from '../entity/order-line.entity';
+import { OrderLine, OrderLineProps } from '../entity/order-line.entity';
 import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 import { CustomerId } from '../../customer/value-object/customer-id.vo';
+import { OrderException } from '../exception/order.exception';
+import { PendingOrderState } from '../state/pending-order-state.state';
+import { OrderState } from '../enum/order-state.enum';
 
 export interface OrderProps {
   id: OrderId;
-  cartId: CartId;
   customerId: CustomerId;
-  couponId: CouponId | null;
+  couponId?: CouponId | null;
   orderLines: OrderLine[];
   state: IOrderState;
   invoicePath?: string | null;
@@ -22,7 +24,7 @@ export interface OrderProps {
 
 export class OrderAggregate extends BaseAggregateRoot<OrderId> {
   private _customerId: CustomerId;
-  private _couponId: CouponId | null;
+  private _couponId?: CouponId | null;
   private _orderLines: OrderLine[];
   private _state: IOrderState;
   private _invoicePath?: string | null;
@@ -43,15 +45,60 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     this._updatedAt = props.updatedAt;
   }
 
+  public static create(
+    customerId: CustomerId,
+    orderLinesData: Array<
+      Omit<OrderLineProps, 'id' | 'orderId' | 'createdAt' | 'updatedAt'>
+    >,
+    couponId?: CouponId | null,
+  ): OrderAggregate {
+    const orderId = OrderId.create();
+
+    if (!orderLinesData || orderLinesData.length === 0) {
+      throw new OrderException('Order must have at least one line item.');
+    }
+
+    const orderLines = orderLinesData.map((lineData) =>
+      OrderLine.create(
+        orderId,
+        lineData.productId,
+        lineData.productId.toString(),
+        lineData.quantity.value,
+      ),
+    );
+
+    const props: OrderProps = {
+      id: orderId,
+      customerId,
+      couponId,
+      orderLines,
+      state: new PendingOrderState(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const order = new OrderAggregate(props);
+
+    return order;
+  }
+
+  public static reconstitute(props: OrderProps): OrderAggregate {
+    return new OrderAggregate(props);
+  }
+
   get customerId(): CustomerId {
     return this._customerId;
   }
 
-  get couponId(): CouponId | null {
+  get couponId(): CouponId | null | undefined {
     return this._couponId;
   }
 
-  get state(): string {
+  get orderLines(): OrderLine[] {
+    return this._orderLines;
+  }
+
+  get state(): OrderState {
     return this._state.state;
   }
 
@@ -75,11 +122,27 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     return this._updatedAt;
   }
 
-  get orderLines(): OrderLine[] {
-    return this._orderLines;
+  public completeOrder(): void {
+    this._state.complete(this);
   }
 
-  setState(state: IOrderState): void {
+  public setCompletedAt(date: Date): void {
+    this._completedAt = date;
+  }
+
+  public setCanceledAt(date: Date): void {
+    this._canceledAt = date;
+  }
+
+  public setState(state: IOrderState): void {
     this._state = state;
+  }
+
+  public setInvoicePath(path: string): void {
+    if (this.state === OrderState.CANCELED) {
+      throw new OrderException('Cannot set invoice path for a canceled order.');
+    }
+    this._invoicePath = path;
+    this._updatedAt = new Date();
   }
 }

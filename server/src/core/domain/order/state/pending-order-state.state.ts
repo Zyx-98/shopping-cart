@@ -7,13 +7,12 @@ import { IOrderState } from './order-state.state';
 export class PendingOrderState implements IOrderState {
   public state = OrderState.PENDING;
 
-  public pending(): void {
-    throw new Error('Order is already pending');
-  }
-  public completed(order: OrderAggregate): void {
+  public complete(order: OrderAggregate): void {
+    order.setCompletedAt(new Date());
     order.setState(new CompletedOrderState());
   }
-  public canceled(order: OrderAggregate): void {
+  public cancel(order: OrderAggregate): void {
+    order.setCanceledAt(new Date());
     order.setState(new CanceledOrderState());
   }
 }

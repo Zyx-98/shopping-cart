@@ -3,7 +3,6 @@ import { OrderState } from '../enum/order-state.enum';
 
 export interface IOrderState {
   state: OrderState;
-  pending(order: OrderAggregate): void;
-  completed(order: OrderAggregate): void;
-  canceled(order: OrderAggregate): void;
+  complete(order: OrderAggregate): void;
+  cancel(order: OrderAggregate): void;
 }
