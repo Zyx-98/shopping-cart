@@ -34,7 +34,7 @@ export class ProductRepository implements IProductRepository {
   update(_entity: ProductAggregate): Promise<ProductAggregate> {
     throw new Error('Method not implemented.');
   }
-  upsert(_entity: ProductAggregate): Promise<ProductAggregate> {
+  save(_entity: ProductAggregate): Promise<ProductAggregate> {
     throw new Error('Method not implemented.');
   }
 }

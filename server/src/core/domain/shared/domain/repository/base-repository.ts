@@ -6,7 +6,7 @@ export interface IBaseRepository<T> {
   findById(id: UniqueEntityId): Promise<T | null>;
   store(entity: T): Promise<T>;
   update(entity: T): Promise<T>;
-  upsert(entity: T): Promise<T>;
+  save(entity: T): Promise<T>;
   // remove(entity: T): Promise<void>;
   // removeById(id: UniqueEntityId): Promise<void>;
   // findByCriteriaAndPaginate(

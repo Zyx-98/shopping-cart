@@ -47,7 +47,7 @@ export class CartRepository implements ICartRepository {
   update(_entity: CartAggregate): Promise<CartAggregate> {
     throw new Error('Method not implemented.');
   }
-  async upsert(entity: CartAggregate): Promise<CartAggregate> {
+  async save(entity: CartAggregate): Promise<CartAggregate> {
     const persistence = await this.mapper.toPersistence(entity);
 
     let cart = await this.ormRepository.findOne({

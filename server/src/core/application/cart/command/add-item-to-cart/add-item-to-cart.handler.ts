@@ -37,6 +37,6 @@ export class AddItemToCartHandler {
 
     cart.addCartItem(productId, quantity, product.itemPrice);
 
-    await this.cartRepository.upsert(cart);
+    await this.cartRepository.save(cart);
   }
 }

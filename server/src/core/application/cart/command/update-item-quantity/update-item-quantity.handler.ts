@@ -22,6 +22,6 @@ export class UpdateItemQuantityHandler {
 
     cart.updateItemQuantity(productId, quantity);
 
-    await this.cartRepository.upsert(cart);
+    await this.cartRepository.save(cart);
   }
 }

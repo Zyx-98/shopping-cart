@@ -22,6 +22,6 @@ export class RemoveItemFromCartHandler {
 
     cart.removeCartItem(productId);
 
-    await this.cartRepository.upsert(cart);
+    await this.cartRepository.save(cart);
   }
 }
