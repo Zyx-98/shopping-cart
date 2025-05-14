@@ -1,4 +1,4 @@
-export const HASHING_SERVICE = Symbol('IHASHING_SERVICE');
+export const HASHING_SERVICE = Symbol('HASHING_SERVICE');
 
 export interface IHashingService {
   hash(plain: string): Promise<string>;
