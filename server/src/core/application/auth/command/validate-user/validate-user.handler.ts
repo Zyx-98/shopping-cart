@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from 'src/core/domain/user/repositories/user.repository';
+} from 'src/core/domain/user/repository/user.repository';
 import {
   HASHING_SERVICE,
   IHashingService,
@@ -12,7 +12,7 @@ import { AuthenticatedUserDto } from '../../dto/authenticated-user.dto';
 import {
   CUSTOMER_REPOSITORY,
   ICustomerRepository,
-} from 'src/core/domain/customer/repositories/customer.repository';
+} from 'src/core/domain/customer/repository/customer.repository';
 
 @Injectable()
 export class ValidateUserHandler {

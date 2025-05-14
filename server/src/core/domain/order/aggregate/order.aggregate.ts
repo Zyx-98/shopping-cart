@@ -1,8 +1,8 @@
 import { AggregateRoot } from '@nestjs/cqrs';
-import { OrderId } from '../value-objects/order-id.vo';
-import { CartId } from '../../cart/value-objects/cart-id.vo';
+import { OrderId } from '../value-object/order-id.vo';
+import { CartId } from '../../cart/value-object/cart-id.vo';
 import { CouponId } from '../../coupon/value-objects/coupon-id.vo';
-import { OrderState } from '../states/order-state.state';
+import { OrderState } from '../state/order-state.state';
 
 export class OrderAggregate extends AggregateRoot {
   private _orderId: OrderId;

@@ -1,4 +1,4 @@
-import { IBaseRepository } from '../../shared/domain/repositories/base-repository';
+import { IBaseRepository } from '../../shared/domain/repository/base-repository';
 import { PaymentAggregate } from '../aggregate/payment.aggregate';
 
 export interface IPaymentRepository extends IBaseRepository<PaymentAggregate> {}

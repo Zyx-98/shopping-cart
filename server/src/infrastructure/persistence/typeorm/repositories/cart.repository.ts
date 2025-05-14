@@ -1,8 +1,8 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartAggregate } from 'src/core/domain/cart/aggregate/cart.aggregate';
-import { ICartRepository } from 'src/core/domain/cart/repositories/cart.repository';
-import { CustomerId } from 'src/core/domain/customer/value-objects/customer-id.vo';
-import { UniqueEntityId } from 'src/core/domain/shared/domain/value-objects/unique-entity-id.vo';
+import { ICartRepository } from 'src/core/domain/cart/repository/cart.repository';
+import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
+import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 import { Repository } from 'typeorm';
 import { PersistenceCartMapper } from '../mappers/persistence-cart.mapper';
 import { CartSchema } from '../entities/cart.schema';

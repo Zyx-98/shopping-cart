@@ -1,6 +1,6 @@
 import { AggregateRoot } from '@nestjs/cqrs';
 import { PaymentId } from '../value-object/payment-id.vo';
-import { Price } from '../../shared/domain/value-objects/price.vo';
+import { Price } from '../../shared/domain/value-object/price.vo';
 import { PaymentState } from '../states/payment-state.state';
 
 export class PaymentAggregate extends AggregateRoot {

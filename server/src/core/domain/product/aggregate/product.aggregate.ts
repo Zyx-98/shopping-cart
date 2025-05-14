@@ -1,6 +1,6 @@
 import { AggregateRoot } from '@nestjs/cqrs';
-import { ProductId } from '../value-objects/product-id.vo';
-import { Price } from '../../shared/domain/value-objects/price.vo';
+import { ProductId } from '../value-object/product-id.vo';
+import { Price } from '../../shared/domain/value-object/price.vo';
 
 interface ProductProps {
   id: ProductId;

@@ -1,7 +1,7 @@
 import { AggregateRoot } from '@nestjs/cqrs';
-import { CustomerId } from '../value-objects/customer-id.vo';
-import { EmailAddress } from '../../shared/domain/value-objects/email.vo';
-import { Address } from '../../shared/domain/value-objects/address.vo';
+import { CustomerId } from '../value-object/customer-id.vo';
+import { EmailAddress } from '../../shared/domain/value-object/email.vo';
+import { Address } from '../../shared/domain/value-object/address.vo';
 
 interface CustomerProps {
   id: CustomerId;

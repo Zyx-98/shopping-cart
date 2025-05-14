@@ -1,7 +1,7 @@
 import { AggregateRoot } from '@nestjs/cqrs';
-import { ProductId } from '../../product/value-objects/product-id.vo';
-import { InventoryId } from '../value-objects/inventory-id.vo';
-import { Quantity } from '../../shared/domain/value-objects/quantity.vo';
+import { ProductId } from '../../product/value-object/product-id.vo';
+import { InventoryId } from '../value-object/inventory-id.vo';
+import { Quantity } from '../../shared/domain/value-object/quantity.vo';
 
 export class InventoryAggregate extends AggregateRoot {
   private _inventoryId: InventoryId;

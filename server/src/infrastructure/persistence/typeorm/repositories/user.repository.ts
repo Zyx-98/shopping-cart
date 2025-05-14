@@ -1,7 +1,7 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserAggregate } from 'src/core/domain/user/aggregate/user.aggregate';
-import { IUserRepository } from 'src/core/domain/user/repositories/user.repository';
-import { UserId } from 'src/core/domain/user/value-objects/user-id.vo';
+import { IUserRepository } from 'src/core/domain/user/repository/user.repository';
+import { UserId } from 'src/core/domain/user/value-object/user-id.vo';
 import { UserSchema } from '../entities/user.schema';
 import { Repository } from 'typeorm';
 import { PersistenceUserMapper } from '../mappers/persistence-user.mapper';

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   CART_REPOSITORY,
   ICartRepository,
-} from 'src/core/domain/cart/repositories/cart.repository';
+} from 'src/core/domain/cart/repository/cart.repository';
 import { CartMapper } from '../../mapper/cart.mapper';
 import { getCartByCustomerIdQuery } from './get-cart-by-customer-id.query';
 import { CartDto } from '../../dto/cart.dto';

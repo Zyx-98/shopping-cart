@@ -2,11 +2,11 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CART_REPOSITORY,
   ICartRepository,
-} from 'src/core/domain/cart/repositories/cart.repository';
+} from 'src/core/domain/cart/repository/cart.repository';
 import {
   IProductRepository,
   PRODUCT_REPOSITORY,
-} from 'src/core/domain/product/repositories/product.repository';
+} from 'src/core/domain/product/repository/product.repository';
 import { AddItemToCartCommand } from './add-item-to-cart.command';
 import { CartAggregate } from 'src/core/domain/cart/aggregate/cart.aggregate';
 

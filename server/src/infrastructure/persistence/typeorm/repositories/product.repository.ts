@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductAggregate } from 'src/core/domain/product/aggregate/product.aggregate';
-import { IProductRepository } from 'src/core/domain/product/repositories/product.repository';
-import { ProductId } from 'src/core/domain/product/value-objects/product-id.vo';
+import { IProductRepository } from 'src/core/domain/product/repository/product.repository';
+import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { ProductSchema } from '../entities/product.schema';
 import { Repository } from 'typeorm';
 import { PersistenceProductMapper } from '../mappers/persistence-product.mapper';

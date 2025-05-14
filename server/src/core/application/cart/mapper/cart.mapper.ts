@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CartAggregate } from 'src/core/domain/cart/aggregate/cart.aggregate';
 import { CartDto } from '../dto/cart.dto';
-import { CartItem } from 'src/core/domain/cart/entities/cart-item.entity';
+import { CartItem } from 'src/core/domain/cart/entity/cart-item.entity';
 import { CartItemDto } from '../dto/cart-item.dto';
 
 @Injectable()

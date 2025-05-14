@@ -1,6 +1,6 @@
 import { CustomerAggregate } from 'src/core/domain/customer/aggregate/customer.aggregate';
-import { ICustomerRepository } from 'src/core/domain/customer/repositories/customer.repository';
-import { UserId } from 'src/core/domain/user/value-objects/user-id.vo';
+import { ICustomerRepository } from 'src/core/domain/customer/repository/customer.repository';
+import { UserId } from 'src/core/domain/user/value-object/user-id.vo';
 import { PersistenceCustomerMapper } from '../mappers/persistence-customer.mapper';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CustomerSchema } from '../entities/customer.schema';

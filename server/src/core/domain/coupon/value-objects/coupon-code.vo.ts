@@ -1,4 +1,4 @@
-import { InvalidArgumentException } from '../../shared/domain/exceptions/invalid-argument.exception';
+import { InvalidArgumentException } from '../../shared/domain/exception/invalid-argument.exception';
 
 export class CouponCode {
   public readonly value: string;

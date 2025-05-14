@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CART_REPOSITORY,
   ICartRepository,
-} from 'src/core/domain/cart/repositories/cart.repository';
+} from 'src/core/domain/cart/repository/cart.repository';
 import { UpdateItemQuantityCommand } from './update-item-quantity.command';
 
 @Injectable()

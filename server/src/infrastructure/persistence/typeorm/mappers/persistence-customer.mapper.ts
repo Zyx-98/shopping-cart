@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CustomerSchema } from '../entities/customer.schema';
 import { CustomerAggregate } from 'src/core/domain/customer/aggregate/customer.aggregate';
-import { CustomerId } from 'src/core/domain/customer/value-objects/customer-id.vo';
-import { EmailAddress } from 'src/core/domain/shared/domain/value-objects/email.vo';
+import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
+import { EmailAddress } from 'src/core/domain/shared/domain/value-object/email.vo';
 import { DeepPartial } from 'typeorm';
 
 @Injectable()

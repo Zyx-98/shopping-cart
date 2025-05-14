@@ -1,6 +1,6 @@
-import { CustomerId } from 'src/core/domain/customer/value-objects/customer-id.vo';
-import { ProductId } from 'src/core/domain/product/value-objects/product-id.vo';
-import { Quantity } from 'src/core/domain/shared/domain/value-objects/quantity.vo';
+import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
+import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
+import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 
 export class UpdateItemQuantityCommand {
   constructor(

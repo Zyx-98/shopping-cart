@@ -1,11 +1,11 @@
 import { AggregateRoot } from '@nestjs/cqrs';
-import { CartId } from '../value-objects/cart-id.vo';
-import { CartItem } from '../entities/cart-item.entity';
-import { CustomerId } from '../../customer/value-objects/customer-id.vo';
-import { ProductId } from '../../product/value-objects/product-id.vo';
-import { Quantity } from '../../shared/domain/value-objects/quantity.vo';
-import { Price } from '../../shared/domain/value-objects/price.vo';
-import { ProductNotInCartException } from '../exceptions/product-not-in-cart-exception';
+import { CartId } from '../value-object/cart-id.vo';
+import { CartItem } from '../entity/cart-item.entity';
+import { CustomerId } from '../../customer/value-object/customer-id.vo';
+import { ProductId } from '../../product/value-object/product-id.vo';
+import { Quantity } from '../../shared/domain/value-object/quantity.vo';
+import { Price } from '../../shared/domain/value-object/price.vo';
+import { ProductNotInCartException } from '../exception/product-not-in-cart-exception';
 // import { CartInitializedEvent } from '../events/cart-initialized.event';
 // import { CartAddedToCartItemEvent } from '../events/cart-added-to-cart-item.event';
 // import { CartItemRemovedFromCartEvent } from '../events/cart-item-removed-from-cart-event.event';

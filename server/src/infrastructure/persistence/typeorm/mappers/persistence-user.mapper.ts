@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { UserSchema } from '../entities/user.schema';
 import { UserAggregate } from 'src/core/domain/user/aggregate/user.aggregate';
-import { UserId } from 'src/core/domain/user/value-objects/user-id.vo';
-import { EmailAddress } from 'src/core/domain/shared/domain/value-objects/email.vo';
-import { Password } from 'src/core/domain/user/value-objects/password.vo';
+import { UserId } from 'src/core/domain/user/value-object/user-id.vo';
+import { EmailAddress } from 'src/core/domain/shared/domain/value-object/email.vo';
+import { Password } from 'src/core/domain/user/value-object/password.vo';
 import { DeepPartial } from 'typeorm';
 
 @Injectable()

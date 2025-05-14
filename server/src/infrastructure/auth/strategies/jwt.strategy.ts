@@ -7,8 +7,8 @@ import { TokenPayload } from 'src/core/application/ports/token.service';
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from 'src/core/domain/user/repositories/user.repository';
-import { UserId } from 'src/core/domain/user/value-objects/user-id.vo';
+} from 'src/core/domain/user/repository/user.repository';
+import { UserId } from 'src/core/domain/user/value-object/user-id.vo';
 
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(

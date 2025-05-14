@@ -25,13 +25,13 @@ import { GetCartByCustomerIdHandler } from 'src/core/application/cart/query/get-
 import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
 import { RequestWithUser } from '../../auth/shared/request/request-with-user.request';
 import { CartDto } from 'src/core/application/cart/dto/cart.dto';
-import { CustomerId } from 'src/core/domain/customer/value-objects/customer-id.vo';
+import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
 import { IsCustomerGuard } from 'src/infrastructure/auth/guards/is-customer.guard';
 import { getCartByCustomerIdQuery } from 'src/core/application/cart/query/get-cart-by-customer-id/get-cart-by-customer-id.query';
 import { AddCartItemRequestDto } from '../dto/add-cart-item-request.dto';
 import { AddItemToCartCommand } from 'src/core/application/cart/command/add-item-to-cart/add-item-to-cart.command';
-import { ProductId } from 'src/core/domain/product/value-objects/product-id.vo';
-import { Quantity } from 'src/core/domain/shared/domain/value-objects/quantity.vo';
+import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
+import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 import { RemoveItemFromCartHandler } from 'src/core/application/cart/command/remove-item-from-cart/remove-item-from-cart.handler';
 import { RemoveItemFromCartCommand } from 'src/core/application/cart/command/remove-item-from-cart/remove-item-from-cart.command';
 import { UpdateItemQuantityHandler } from 'src/core/application/cart/command/update-item-quantity/update-item-quantity.handler';
