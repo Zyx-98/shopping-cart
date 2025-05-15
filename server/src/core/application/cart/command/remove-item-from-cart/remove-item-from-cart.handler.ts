@@ -14,7 +14,7 @@ export class RemoveItemFromCartHandler {
   async execute(command: RemoveItemFromCartCommand): Promise<void> {
     const { customerId, productId } = command;
 
-    const cart = await this.cartRepository.findByCustomerId(customerId);
+    const cart = await this.cartRepository.findByUniqueId(customerId);
 
     if (!cart) {
       throw new NotFoundException('Active cart not found for this customer');
@@ -22,6 +22,6 @@ export class RemoveItemFromCartHandler {
 
     cart.removeCartItem(productId);
 
-    await this.cartRepository.save(cart);
+    await this.cartRepository.persist(cart);
   }
 }

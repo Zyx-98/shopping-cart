@@ -1,13 +1,13 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartAggregate } from 'src/core/domain/cart/aggregate/cart.aggregate';
 import { ICartRepository } from 'src/core/domain/cart/repository/cart.repository';
-import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 import { Repository } from 'typeorm';
 import { PersistenceCartMapper } from '../mappers/persistence-cart.mapper';
 import { CartSchema } from '../entities/cart.schema';
 import { Injectable } from '@nestjs/common';
 import { CartItemSchema } from '../entities/cart-item.schema';
+import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
 
 @Injectable()
 export class CartRepository implements ICartRepository {
@@ -19,9 +19,7 @@ export class CartRepository implements ICartRepository {
     private readonly mapper: PersistenceCartMapper,
   ) {}
 
-  async findByCustomerId(
-    customerId: CustomerId,
-  ): Promise<CartAggregate | null> {
+  async findByUniqueId(customerId: CustomerId): Promise<CartAggregate | null> {
     const schema = await this.ormRepository.findOne({
       where: {
         customer: {
@@ -47,7 +45,7 @@ export class CartRepository implements ICartRepository {
   update(_entity: CartAggregate): Promise<CartAggregate> {
     throw new Error('Method not implemented.');
   }
-  async save(entity: CartAggregate): Promise<CartAggregate> {
+  async persist(entity: CartAggregate): Promise<CartAggregate> {
     const persistence = await this.mapper.toPersistence(entity);
 
     let cart = await this.ormRepository.findOne({

@@ -41,7 +41,7 @@ export class ValidateUserHandler {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const customer = await this.customerRepository.findByUserId(
+    const customer = await this.customerRepository.findByUniqueId(
       user.getUserId(),
     );
 

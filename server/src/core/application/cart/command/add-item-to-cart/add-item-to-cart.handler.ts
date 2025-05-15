@@ -29,7 +29,7 @@ export class AddItemToCartHandler {
       );
     }
 
-    let cart = await this.cartRepository.findByCustomerId(customerId);
+    let cart = await this.cartRepository.findByUniqueId(customerId);
 
     if (!cart) {
       cart = CartAggregate.initializeCart(customerId);
@@ -37,6 +37,6 @@ export class AddItemToCartHandler {
 
     cart.addCartItem(productId, quantity, product.itemPrice);
 
-    await this.cartRepository.save(cart);
+    await this.cartRepository.persist(cart);
   }
 }

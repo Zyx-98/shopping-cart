@@ -18,7 +18,7 @@ export class GetCartByCustomerIdHandler {
   async execute(query: getCartByCustomerIdQuery): Promise<CartDto | null> {
     const { customerId } = query;
 
-    const cart = await this.cartRepository.findByCustomerId(customerId);
+    const cart = await this.cartRepository.findByUniqueId(customerId);
 
     if (!cart) return null;
 

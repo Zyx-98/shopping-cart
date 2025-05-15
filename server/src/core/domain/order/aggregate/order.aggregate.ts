@@ -123,6 +123,12 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
 
   public completeOrder(): void {
     this._state.complete(this);
+    this._updatedAt = new Date();
+  }
+
+  public cancelOrder(): void {
+    this._state.cancel(this);
+    this._updatedAt = new Date();
   }
 
   public setCompletedAt(date: Date): void {

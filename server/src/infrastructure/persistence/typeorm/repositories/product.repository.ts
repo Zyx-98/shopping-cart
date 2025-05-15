@@ -6,6 +6,7 @@ import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { ProductSchema } from '../entities/product.schema';
 import { Repository } from 'typeorm';
 import { PersistenceProductMapper } from '../mappers/persistence-product.mapper';
+import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 
 @Injectable()
 export class ProductRepository implements IProductRepository {
@@ -14,6 +15,11 @@ export class ProductRepository implements IProductRepository {
     private readonly ormRepository: Repository<ProductSchema>,
     private readonly mapper: PersistenceProductMapper,
   ) {}
+  findByUniqueId<P extends UniqueEntityId>(
+    _uniqueId: P,
+  ): Promise<ProductAggregate | null> {
+    throw new Error('Method not implemented.');
+  }
   async findAll(): Promise<ProductAggregate[]> {
     const schemas = await this.ormRepository.find();
 
@@ -27,14 +33,5 @@ export class ProductRepository implements IProductRepository {
     });
 
     return schema ? this.mapper.toDomain(schema) : null;
-  }
-  store(_entity: ProductAggregate): Promise<ProductAggregate> {
-    throw new Error('Method not implemented.');
-  }
-  update(_entity: ProductAggregate): Promise<ProductAggregate> {
-    throw new Error('Method not implemented.');
-  }
-  save(_entity: ProductAggregate): Promise<ProductAggregate> {
-    throw new Error('Method not implemented.');
   }
 }

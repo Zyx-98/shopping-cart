@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CustomerSchema } from '../entities/customer.schema';
 import { Repository } from 'typeorm';
 import { UserSchema } from '../entities/user.schema';
+import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 
 export class CustomerRepository implements ICustomerRepository {
   constructor(
@@ -15,7 +16,13 @@ export class CustomerRepository implements ICustomerRepository {
     private readonly userRepository: Repository<UserSchema>,
     private readonly mapper: PersistenceCustomerMapper,
   ) {}
-  async findByUserId(userId: UserId): Promise<CustomerAggregate | null> {
+  findAll(): Promise<CustomerAggregate[]> {
+    throw new Error('Method not implemented.');
+  }
+  findById(_id: UniqueEntityId): Promise<CustomerAggregate | null> {
+    throw new Error('Method not implemented.');
+  }
+  async findByUniqueId(userId: UserId): Promise<CustomerAggregate | null> {
     const user = await this.userRepository.findOne({
       where: {
         uuid: userId.toString(),
