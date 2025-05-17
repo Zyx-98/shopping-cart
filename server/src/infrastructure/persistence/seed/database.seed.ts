@@ -1,8 +1,8 @@
 import AppDataSource from 'data-source';
 import { UserSchema } from '../typeorm/entities/user.schema';
-import { BcryptHashingService } from 'src/infrastructure/auth/services/bcrypt-hashing.service';
-import { CustomerSchema } from '../typeorm/entities/customer.schema';
-import { randomUUID } from 'crypto';
+import { UserFactory } from '../typeorm/factory/user.factory';
+import { ProductSchema } from '../typeorm/entities/product.schema';
+import { ProductFactory } from '../typeorm/factory/product.factory';
 
 async function seed() {
   await AppDataSource.initialize();
@@ -17,29 +17,25 @@ async function seed() {
       `truncate table customers restart identity cascade`,
     );
     await queryRunner.query(`truncate table users restart identity cascade`);
+    await queryRunner.query(
+      `truncate table inventories restart identity cascade`,
+    );
+    await queryRunner.query(`truncate table products restart identity cascade`);
+
+    const user = await new UserFactory().make({
+      email: 'test@example.com',
+      name: 'customer test',
+    });
 
     const userRepo = queryRunner.manager.getRepository(UserSchema);
-    const customerRepo = queryRunner.manager.getRepository(CustomerSchema);
 
-    const user = userRepo.create({
-      uuid: randomUUID(),
-      name: 'customer test',
-      email: 'test@example.com',
-      passwordHash: await new BcryptHashingService().hash('password123'),
-    });
+    await userRepo.save(user);
 
-    const savedUser = await userRepo.save(user);
+    const productRepo = queryRunner.manager.getRepository(ProductSchema);
 
-    const customer = customerRepo.create({
-      uuid: randomUUID(),
-      name: 'customer test',
-      email: user.email,
-      userId: savedUser.id,
-      address: 'address test',
-      phone: '000-000-0000',
-    });
+    const products = await new ProductFactory().makeMany(60);
 
-    await customerRepo.save(customer);
+    await productRepo.save(products);
 
     await queryRunner.commitTransaction();
 

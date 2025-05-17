@@ -19,6 +19,7 @@ import { ProductSchema } from './entities/product.schema';
 import { CartSchema } from './entities/cart.schema';
 import { CartItemSchema } from './entities/cart-item.schema';
 import { TypeormQueryBuilderModule } from './query-builder/query-builder.module';
+import { InventorySchema } from './entities/inventory.schema';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TypeormQueryBuilderModule } from './query-builder/query-builder.module'
       ProductSchema,
       CartSchema,
       CartItemSchema,
+      InventorySchema,
     ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     TypeormQueryBuilderModule,

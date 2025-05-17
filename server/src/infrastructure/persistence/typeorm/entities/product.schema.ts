@@ -2,9 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { InventorySchema } from './inventory.schema';
 
 @Entity('products')
 export class ProductSchema {
@@ -25,4 +27,9 @@ export class ProductSchema {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
+
+  @OneToOne(() => InventorySchema, (inventory) => inventory.product, {
+    cascade: true,
+  })
+  inventory: InventorySchema;
 }
