@@ -29,3 +29,12 @@ export interface PaginatedResult<T> {
   limit: number;
   totalPages: number;
 }
+
+export type Cursor = string;
+
+export interface CursorPaginatedResult<T> {
+  data: T[];
+  previousCursor: Cursor | null;
+  nextCursor: Cursor | null;
+  total: number;
+}
