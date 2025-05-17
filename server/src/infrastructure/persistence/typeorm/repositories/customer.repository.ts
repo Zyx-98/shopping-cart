@@ -7,7 +7,7 @@ import { CustomerSchema } from '../entities/customer.schema';
 import { Repository } from 'typeorm';
 import { UserSchema } from '../entities/user.schema';
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
-import { PaginatedResult } from 'src/core/domain/shared/types/query-criteria.interface';
+import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
 
 export class CustomerRepository implements ICustomerRepository {
   constructor(

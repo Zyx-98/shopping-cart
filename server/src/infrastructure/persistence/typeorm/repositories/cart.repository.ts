@@ -8,7 +8,7 @@ import { CartSchema } from '../entities/cart.schema';
 import { Injectable } from '@nestjs/common';
 import { CartItemSchema } from '../entities/cart-item.schema';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
-import { PaginatedResult } from 'src/core/domain/shared/types/query-criteria.interface';
+import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
 
 @Injectable()
 export class CartRepository implements ICartRepository {

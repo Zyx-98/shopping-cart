@@ -4,7 +4,7 @@ import {
   PRODUCT_REPOSITORY,
 } from 'src/core/domain/product/repository/product.repository';
 import { GetProductListQuery } from './get-product-list.query';
-import { PaginatedResult } from 'src/core/domain/shared/types/query-criteria.interface';
+import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
 import { ProductDto } from '../dto/product.dto';
 import { ProductMapper } from '../mapper/product.mapper';
 

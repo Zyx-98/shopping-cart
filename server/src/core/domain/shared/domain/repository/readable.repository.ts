@@ -2,7 +2,7 @@ import { UniqueEntityId } from '../value-object/unique-entity-id.vo';
 import {
   PaginatedResult,
   QueryCriteria,
-} from '../../types/query-criteria.interface';
+} from '../../types/pagination.type';
 
 export interface IReadableRepository<T> {
   findAll(criteria: QueryCriteria): Promise<PaginatedResult<T>>;

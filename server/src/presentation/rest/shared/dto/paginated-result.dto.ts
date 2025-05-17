@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginatedResult } from 'src/core/domain/shared/types/query-criteria.interface';
+import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
 
 export class PaginatedResultDto<T> implements PaginatedResult<T> {
   @ApiProperty()

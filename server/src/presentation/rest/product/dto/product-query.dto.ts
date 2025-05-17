@@ -3,7 +3,7 @@ import { IsOptional } from 'class-validator';
 import {
   FilterParams,
   SortParams,
-} from 'src/core/domain/shared/types/query-criteria.interface';
+} from 'src/core/domain/shared/types/pagination.type';
 
 export class ProductQueryDto {
   @ApiPropertyOptional({

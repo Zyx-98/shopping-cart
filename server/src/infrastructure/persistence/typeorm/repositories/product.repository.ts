@@ -10,7 +10,7 @@ import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/uniqu
 import {
   PaginatedResult,
   QueryCriteria,
-} from 'src/core/domain/shared/types/query-criteria.interface';
+} from 'src/core/domain/shared/types/pagination.type';
 import { TypeOrmQueryBuilderService } from '../query-builder/typeorm-query-builder.service';
 
 @Injectable()

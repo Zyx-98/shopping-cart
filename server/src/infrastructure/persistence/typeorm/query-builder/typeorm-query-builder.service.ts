@@ -4,7 +4,7 @@ import {
   PaginatedResult,
   QueryCriteria,
   SortParams,
-} from 'src/core/domain/shared/types/query-criteria.interface';
+} from 'src/core/domain/shared/types/pagination.type';
 import { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm';
 
 type Prev = [never, 0, 1, 2, 3, 4, ...Array<number>];

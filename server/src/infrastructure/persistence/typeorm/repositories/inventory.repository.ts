@@ -6,7 +6,7 @@ import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/uniqu
 import {
   QueryCriteria,
   PaginatedResult,
-} from 'src/core/domain/shared/types/query-criteria.interface';
+} from 'src/core/domain/shared/types/pagination.type';
 import { InventorySchema } from '../entities/inventory.schema';
 import { Repository } from 'typeorm';
 import { PersistenceInventoryMapper } from '../mappers/persistence-inventory.mapper';
