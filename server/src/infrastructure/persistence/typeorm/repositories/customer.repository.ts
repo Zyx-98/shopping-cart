@@ -7,6 +7,7 @@ import { CustomerSchema } from '../entities/customer.schema';
 import { Repository } from 'typeorm';
 import { UserSchema } from '../entities/user.schema';
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
+import { PaginatedResult } from 'src/core/domain/shared/types/query-criteria.interface';
 
 export class CustomerRepository implements ICustomerRepository {
   constructor(
@@ -16,7 +17,7 @@ export class CustomerRepository implements ICustomerRepository {
     private readonly userRepository: Repository<UserSchema>,
     private readonly mapper: PersistenceCustomerMapper,
   ) {}
-  findAll(): Promise<CustomerAggregate[]> {
+  findAll(): Promise<PaginatedResult<CustomerAggregate>> {
     throw new Error('Method not implemented.');
   }
   findById(_id: UniqueEntityId): Promise<CustomerAggregate | null> {

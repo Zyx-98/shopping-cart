@@ -5,7 +5,7 @@ import {
   ITokens,
   ITokenService,
   TokenPayload,
-} from 'src/core/application/ports/token.service';
+} from 'src/core/application/port/token.service';
 
 @Injectable()
 export class JwtTokenService implements ITokenService {

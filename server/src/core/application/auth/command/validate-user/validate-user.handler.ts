@@ -6,7 +6,7 @@ import {
 import {
   HASHING_SERVICE,
   IHashingService,
-} from '../../../ports/hashing.service';
+} from '../../../port/hashing.service';
 import { ValidateUserCommand } from './validate-user.command';
 import { AuthenticatedUserDto } from '../../dto/authenticated-user.dto';
 import {

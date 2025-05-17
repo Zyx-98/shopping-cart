@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthenticatedUserDto } from 'src/core/application/auth/dto/authenticated-user.dto';
-import { TokenPayload } from 'src/core/application/ports/token.service';
+import { TokenPayload } from 'src/core/application/port/token.service';
 import {
   IUserRepository,
   USER_REPOSITORY,

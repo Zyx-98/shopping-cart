@@ -18,6 +18,7 @@ import { ProductRepository } from './repositories/product.repository';
 import { ProductSchema } from './entities/product.schema';
 import { CartSchema } from './entities/cart.schema';
 import { CartItemSchema } from './entities/cart-item.schema';
+import { TypeormQueryBuilderModule } from './query-builder/query-builder.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { CartItemSchema } from './entities/cart-item.schema';
       CartItemSchema,
     ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
+    TypeormQueryBuilderModule,
   ],
   providers: [
     PersistenceUserMapper,
@@ -57,6 +59,7 @@ import { CartItemSchema } from './entities/cart-item.schema';
     CUSTOMER_REPOSITORY,
     PRODUCT_REPOSITORY,
     CART_REPOSITORY,
+    TypeormQueryBuilderModule,
   ],
 })
 export class TypeormPersistenceModule {}

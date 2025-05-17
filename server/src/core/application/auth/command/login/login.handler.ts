@@ -3,7 +3,7 @@ import {
   ITokenService,
   TOKEN_SERVICE,
   TokenPayload,
-} from '../../../ports/token.service';
+} from '../../../port/token.service';
 import { LoginCommand } from './login.command';
 import { AuthTokenDto } from '../../dto/auth-token.dto';
 

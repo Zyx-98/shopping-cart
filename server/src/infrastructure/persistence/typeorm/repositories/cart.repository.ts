@@ -8,6 +8,7 @@ import { CartSchema } from '../entities/cart.schema';
 import { Injectable } from '@nestjs/common';
 import { CartItemSchema } from '../entities/cart-item.schema';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
+import { PaginatedResult } from 'src/core/domain/shared/types/query-criteria.interface';
 
 @Injectable()
 export class CartRepository implements ICartRepository {
@@ -33,7 +34,7 @@ export class CartRepository implements ICartRepository {
 
     return schema ? this.mapper.toDomain(schema) : null;
   }
-  findAll(): Promise<CartAggregate[]> {
+  findAll(): Promise<PaginatedResult<CartAggregate>> {
     throw new Error('Method not implemented.');
   }
   findById(_id: UniqueEntityId): Promise<CartAggregate | null> {
