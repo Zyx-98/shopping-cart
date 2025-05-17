@@ -20,6 +20,9 @@ import { CartSchema } from './entities/cart.schema';
 import { CartItemSchema } from './entities/cart-item.schema';
 import { TypeormQueryBuilderModule } from './query-builder/query-builder.module';
 import { InventorySchema } from './entities/inventory.schema';
+import { PersistenceInventoryMapper } from './mappers/persistence-inventory.mapper';
+import { INVENTORY_REPOSITORY } from 'src/core/domain/inventory/repository/inventory.repository';
+import { InventoryRepository } from './repositories/inventory.repository';
 
 @Module({
   imports: [
@@ -39,6 +42,7 @@ import { InventorySchema } from './entities/inventory.schema';
     PersistenceCustomerMapper,
     PersistenceProductMapper,
     PersistenceCartMapper,
+    PersistenceInventoryMapper,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
@@ -55,12 +59,17 @@ import { InventorySchema } from './entities/inventory.schema';
       provide: CART_REPOSITORY,
       useClass: CartRepository,
     },
+    {
+      provide: INVENTORY_REPOSITORY,
+      useClass: InventoryRepository,
+    },
   ],
   exports: [
     USER_REPOSITORY,
     CUSTOMER_REPOSITORY,
     PRODUCT_REPOSITORY,
     CART_REPOSITORY,
+    INVENTORY_REPOSITORY,
     TypeormQueryBuilderModule,
   ],
 })
