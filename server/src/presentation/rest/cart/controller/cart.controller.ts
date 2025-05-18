@@ -39,7 +39,7 @@ import { UpdateItemQuantityRequestDto } from '../dto/update-item-quantity-reques
 import { UpdateItemQuantityCommand } from 'src/core/application/cart/command/update-item-quantity/update-item-quantity.command';
 
 @ApiTags('Cart')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, IsCustomerGuard)
 @Controller('cart')
 export class CartController {
