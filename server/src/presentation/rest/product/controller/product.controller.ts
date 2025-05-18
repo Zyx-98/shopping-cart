@@ -21,14 +21,16 @@ export class ProductController {
   async getProducts(
     @Query() queryCriteria: ProductQueryDto,
   ): Promise<PaginatedResultDto<ProductDto>> {
-    const query = new GetProductListQuery({
-      filter: queryCriteria.filter,
-      sort: queryCriteria.sort,
-      pagination: {
+    const query = new GetProductListQuery(
+      {
+        filter: queryCriteria.filter,
+        sort: queryCriteria.sort,
+      },
+      {
         page: queryCriteria.page,
         limit: queryCriteria.limit,
       },
-    });
+    );
 
     const result = await this.getProductListHandler.execute(query);
 

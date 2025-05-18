@@ -19,9 +19,12 @@ export class GetProductListHandler {
   async execute(
     command: GetProductListQuery,
   ): Promise<PaginatedResult<ProductDto>> {
-    const { criteria } = command;
+    const { criteria, pagination } = command;
 
-    const paginatedResult = await this.productRepository.findAll(criteria);
+    const paginatedResult = await this.productRepository.findWithPageLimit(
+      criteria,
+      pagination,
+    );
 
     return {
       ...paginatedResult,

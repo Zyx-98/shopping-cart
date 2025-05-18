@@ -16,10 +16,15 @@ export interface PaginationParams {
   limit?: number;
 }
 
+export interface CursorPaginationParams {
+  limit?: number;
+  nextCursor?: string;
+  previousCursor?: string;
+}
+
 export interface QueryCriteria {
   filter?: FilterParams;
   sort?: SortParams[];
-  pagination?: PaginationParams;
 }
 
 export interface PaginatedResult<T> {
@@ -30,11 +35,11 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-export type Cursor = string;
-
 export interface CursorPaginatedResult<T> {
   data: T[];
-  previousCursor: Cursor | null;
-  nextCursor: Cursor | null;
-  total: number;
+  limit: number;
+  previousCursor?: string | null;
+  nextCursor?: string | null;
+  hasNextPage?: boolean;
+  hasPrevious?: boolean;
 }

@@ -9,6 +9,7 @@ import { PersistenceProductMapper } from '../mappers/persistence-product.mapper'
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 import {
   PaginatedResult,
+  PaginationParams,
   QueryCriteria,
 } from 'src/core/domain/shared/types/pagination.type';
 import { TypeOrmQueryBuilderService } from '../query-builder/typeorm-query-builder.service';
@@ -21,18 +22,22 @@ export class ProductRepository implements IProductRepository {
     private readonly mapper: PersistenceProductMapper,
     private readonly queryBuilderService: TypeOrmQueryBuilderService,
   ) {}
+  findAll(_criteria: QueryCriteria): Promise<ProductAggregate[]> {
+    throw new Error('Method not implemented.');
+  }
   findByUniqueId<P extends UniqueEntityId>(
     _uniqueId: P,
   ): Promise<ProductAggregate | null> {
     throw new Error('Method not implemented.');
   }
-  async findAll(
+  async findWithPageLimit(
     criteria: QueryCriteria,
+    pagination: PaginationParams,
   ): Promise<PaginatedResult<ProductAggregate>> {
     const paginatedEntitiesResult =
       await this.queryBuilderService.buildQuery<ProductSchema>(
         this.ormRepository,
-        criteria,
+        { ...criteria, pagination },
         {
           alias: 'product',
           allowedFilters: ['uuid', 'name'],
