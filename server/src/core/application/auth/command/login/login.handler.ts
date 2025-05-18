@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import {
   ITokenService,
   TOKEN_SERVICE,
@@ -6,9 +6,10 @@ import {
 } from '../../../port/token.service';
 import { LoginCommand } from './login.command';
 import { AuthTokenDto } from '../../dto/auth-token.dto';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-@Injectable()
-export class LoginHandler {
+@CommandHandler(LoginCommand)
+export class LoginHandler implements ICommandHandler<LoginCommand> {
   constructor(
     @Inject(TOKEN_SERVICE) private readonly tokenService: ITokenService,
   ) {}

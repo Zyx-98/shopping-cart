@@ -3,11 +3,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { AuthenticatedUserDto } from 'src/core/application/auth/dto/authenticated-user.dto';
 import { ValidateUserCommand } from 'src/core/application/auth/command/validate-user/validate-user.command';
-import { ValidateUserHandler } from 'src/core/application/auth/command/validate-user/validate-user.handler';
+import { CommandBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly validateUserHandler: ValidateUserHandler) {
+  constructor(private readonly commandBus: CommandBus) {
     super({
       usernameField: 'email',
     });
@@ -19,7 +19,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   ): Promise<AuthenticatedUserDto> {
     try {
       const command = new ValidateUserCommand(email, plainPassword);
-      const userDto = await this.validateUserHandler.execute(command);
+      const userDto = await this.commandBus.execute<
+        ValidateUserCommand,
+        AuthenticatedUserDto
+      >(command);
 
       return userDto;
     } catch (error) {

@@ -14,7 +14,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LoginHandler } from 'src/core/application/auth/command/login/login.handler';
 import { LocalAuthGuard } from 'src/infrastructure/auth/guards/local.guard';
 import { LoginRequestDto } from '../dto/login-request.dto';
 import { AuthenticatedUserDto } from 'src/core/application/auth/dto/authenticated-user.dto';
@@ -22,11 +21,12 @@ import { AuthTokenDto } from 'src/core/application/auth/dto/auth-token.dto';
 import { LoginCommand } from 'src/core/application/auth/command/login/login.command';
 import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
 import { RequestWithUser } from '../shared/request/request-with-user.request';
+import { CommandBus } from '@nestjs/cqrs';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly loginHandler: LoginHandler) {}
+  constructor(private readonly commandBus: CommandBus) {}
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
@@ -35,7 +35,7 @@ export class AuthController {
   @ApiBody({ type: LoginRequestDto })
   @ApiResponse({
     status: 200,
-    description: 'Login successfule, return JWT token',
+    description: 'Login successfully, return JWT token',
   })
   @ApiResponse({
     status: 401,
@@ -44,7 +44,7 @@ export class AuthController {
   async login(@Req() req: RequestWithUser): Promise<AuthTokenDto> {
     const command = new LoginCommand(req.user);
 
-    return this.loginHandler.execute(command);
+    return this.commandBus.execute(command);
   }
 
   @Get('me')

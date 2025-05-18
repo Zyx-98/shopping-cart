@@ -18,7 +18,7 @@ export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
   private _createdAt?: Date | null;
   private _updatedAt?: Date | null;
 
-  private available: Quantity = Quantity.create(0);
+  private _available: Quantity = Quantity.create(0);
 
   constructor(props: InventoryProps) {
     super(props.id);
@@ -59,13 +59,17 @@ export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
     return this._updatedAt;
   }
 
+  public checkAvailability(quantity: Quantity): boolean {
+    return this._quantity.subtract(quantity).isLessThan(this._available);
+  }
+
   public addInventory(quantity: Quantity): void {
     this._quantity = this._quantity.add(quantity);
   }
 
   public removeInventory(quantity: Quantity): void {
     const newQuantity = this._quantity.subtract(quantity);
-    if (newQuantity.isLessThan(newQuantity)) {
+    if (newQuantity.isLessThan(this._available)) {
       throw new InventoryException(
         `Not enough available inventory for ${this.productId.toString()}`,
       );

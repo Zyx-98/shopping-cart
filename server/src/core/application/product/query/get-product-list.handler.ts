@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import {
   IProductRepository,
   PRODUCT_REPOSITORY,
@@ -7,9 +7,12 @@ import { GetProductListQuery } from './get-product-list.query';
 import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
 import { ProductDto } from '../dto/product.dto';
 import { ProductMapper } from '../mapper/product.mapper';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
-@Injectable()
-export class GetProductListHandler {
+@QueryHandler(GetProductListQuery)
+export class GetProductListHandler
+  implements IQueryHandler<GetProductListQuery>
+{
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,

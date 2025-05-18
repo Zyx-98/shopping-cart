@@ -20,23 +20,20 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AddItemToCartHandler } from 'src/core/application/cart/command/add-item-to-cart/add-item-to-cart.handler';
-import { GetCartByCustomerIdHandler } from 'src/core/application/cart/query/get-cart-by-customer-id/get-cart-by-customer-id.handler';
 import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
 import { RequestWithUser } from '../../auth/shared/request/request-with-user.request';
 import { CartDto } from 'src/core/application/cart/dto/cart.dto';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
 import { IsCustomerGuard } from 'src/infrastructure/auth/guards/is-customer.guard';
-import { getCartByCustomerIdQuery } from 'src/core/application/cart/query/get-cart-by-customer-id/get-cart-by-customer-id.query';
+import { GetCartByCustomerIdQuery } from 'src/core/application/cart/query/get-cart-by-customer-id/get-cart-by-customer-id.query';
 import { AddCartItemRequestDto } from '../dto/add-cart-item-request.dto';
 import { AddItemToCartCommand } from 'src/core/application/cart/command/add-item-to-cart/add-item-to-cart.command';
 import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
-import { RemoveItemFromCartHandler } from 'src/core/application/cart/command/remove-item-from-cart/remove-item-from-cart.handler';
 import { RemoveItemFromCartCommand } from 'src/core/application/cart/command/remove-item-from-cart/remove-item-from-cart.command';
-import { UpdateItemQuantityHandler } from 'src/core/application/cart/command/update-item-quantity/update-item-quantity.handler';
 import { UpdateItemQuantityRequestDto } from '../dto/update-item-quantity-request.dto';
 import { UpdateItemQuantityCommand } from 'src/core/application/cart/command/update-item-quantity/update-item-quantity.command';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 @ApiTags('Cart')
 @ApiBearerAuth('JWT-auth')
@@ -44,10 +41,8 @@ import { UpdateItemQuantityCommand } from 'src/core/application/cart/command/upd
 @Controller('cart')
 export class CartController {
   constructor(
-    private readonly addItemToCartHandler: AddItemToCartHandler,
-    private readonly getCartHandler: GetCartByCustomerIdHandler,
-    private readonly removeItemFromCartHandler: RemoveItemFromCartHandler,
-    private readonly updateItemQuantityHandler: UpdateItemQuantityHandler,
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
   ) {}
 
   @Get()
@@ -64,8 +59,8 @@ export class CartController {
   })
   async getCart(@Req() req: RequestWithUser): Promise<CartDto> {
     const customerId = CustomerId.create(req.user.customerId || '');
-    const query = new getCartByCustomerIdQuery(customerId);
-    const cartDto = await this.getCartHandler.execute(query);
+    const query = new GetCartByCustomerIdQuery(customerId);
+    const cartDto = await this.queryBus.execute(query);
 
     if (!cartDto) {
       throw new NotFoundException('Active cart not found for this customer.');
@@ -95,7 +90,7 @@ export class CartController {
       Quantity.create(addCartItemDto.quantity),
     );
 
-    await this.addItemToCartHandler.execute(command);
+    await this.commandBus.execute(command);
 
     return this.getCart(req);
   }
@@ -123,7 +118,7 @@ export class CartController {
       ProductId.create(productId),
     );
 
-    await this.removeItemFromCartHandler.execute(command);
+    await this.commandBus.execute(command);
   }
 
   @Put('items/:productId')
@@ -147,7 +142,7 @@ export class CartController {
       Quantity.create(updateDto.quantity),
     );
 
-    await this.updateItemQuantityHandler.execute(command);
+    await this.commandBus.execute(command);
 
     return this.getCart(req);
   }

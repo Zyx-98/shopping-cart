@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, UnauthorizedException } from '@nestjs/common';
 import {
   IUserRepository,
   USER_REPOSITORY,
@@ -13,9 +13,12 @@ import {
   CUSTOMER_REPOSITORY,
   ICustomerRepository,
 } from 'src/core/domain/customer/repository/customer.repository';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-@Injectable()
-export class ValidateUserHandler {
+@CommandHandler(ValidateUserCommand)
+export class ValidateUserHandler
+  implements ICommandHandler<ValidateUserCommand>
+{
   constructor(
     @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
     @Inject(CUSTOMER_REPOSITORY)

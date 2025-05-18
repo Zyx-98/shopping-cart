@@ -23,6 +23,8 @@ import { InventorySchema } from './entities/inventory.schema';
 import { PersistenceInventoryMapper } from './mappers/persistence-inventory.mapper';
 import { INVENTORY_REPOSITORY } from 'src/core/domain/inventory/repository/inventory.repository';
 import { InventoryRepository } from './repositories/inventory.repository';
+import { PaymentSchema } from './entities/payment.schema';
+import { CouponSchema } from './entities/coupon.schema';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { InventoryRepository } from './repositories/inventory.repository';
       CartSchema,
       CartItemSchema,
       InventorySchema,
+      PaymentSchema,
+      CouponSchema,
     ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     TypeormQueryBuilderModule,

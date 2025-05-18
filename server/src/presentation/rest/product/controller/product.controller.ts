@@ -1,15 +1,15 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { GetProductListHandler } from 'src/core/application/product/query/get-product-list.handler';
 import { GetProductListQuery } from 'src/core/application/product/query/get-product-list.query';
 import { ProductQueryDto } from '../dto/product-query.dto';
 import { ProductDto } from 'src/core/application/product/dto/product.dto';
 import { PaginatedResultDto } from '../../shared/dto/paginated-result.dto';
+import { QueryBus } from '@nestjs/cqrs';
 
 @ApiTags('Product')
 @Controller('products')
 export class ProductController {
-  constructor(private readonly getProductListHandler: GetProductListHandler) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
   @ApiOperation({ summary: 'Retrieve a paginated list of product' })
@@ -32,7 +32,7 @@ export class ProductController {
       },
     );
 
-    const result = await this.getProductListHandler.execute(query);
+    const result = await this.queryBus.execute(query);
 
     return result;
   }

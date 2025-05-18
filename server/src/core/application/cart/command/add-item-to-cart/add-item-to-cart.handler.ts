@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
 import {
   CART_REPOSITORY,
   ICartRepository,
@@ -9,9 +9,12 @@ import {
 } from 'src/core/domain/product/repository/product.repository';
 import { AddItemToCartCommand } from './add-item-to-cart.command';
 import { CartAggregate } from 'src/core/domain/cart/aggregate/cart.aggregate';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-@Injectable()
-export class AddItemToCartHandler {
+@CommandHandler(AddItemToCartCommand)
+export class AddItemToCartHandler
+  implements ICommandHandler<AddItemToCartCommand>
+{
   constructor(
     @Inject(CART_REPOSITORY) private readonly cartRepository: ICartRepository,
     @Inject(PRODUCT_REPOSITORY)

@@ -21,6 +21,10 @@ export interface OrderProps {
   updatedAt: Date;
 }
 
+export type SelectedProducts = Array<
+  Omit<OrderLineProps, 'id' | 'orderId' | 'createdAt' | 'updatedAt'>
+>;
+
 export class OrderAggregate extends BaseAggregateRoot<OrderId> {
   private _customerId: CustomerId;
   private _couponId?: CouponId | null;
@@ -46,9 +50,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
 
   public static create(
     customerId: CustomerId,
-    orderLinesData: Array<
-      Omit<OrderLineProps, 'id' | 'orderId' | 'createdAt' | 'updatedAt'>
-    >,
+    orderLinesData: SelectedProducts,
     couponId?: CouponId | null,
   ): OrderAggregate {
     const orderId = OrderId.create();
