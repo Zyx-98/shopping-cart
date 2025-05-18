@@ -19,10 +19,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   ): Promise<AuthenticatedUserDto> {
     try {
       const command = new ValidateUserCommand(email, plainPassword);
-      const userDto = await this.commandBus.execute<
-        ValidateUserCommand,
-        AuthenticatedUserDto
-      >(command);
+      const userDto = await this.commandBus.execute(command);
 
       return userDto;
     } catch (error) {
