@@ -1,21 +1,21 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { InventoryCommittedCommand } from './inventory-committed.commad';
+import { MarkOrderAwaitingPaymentCommand } from './mark-order-awaiting-payment.commad';
 import { Inject, NotFoundException } from '@nestjs/common';
 import {
   IOrderRepository,
   ORDER_REPOSITORY,
 } from 'src/core/domain/order/repository/order.repository';
 
-@CommandHandler(InventoryCommittedCommand)
-export class InventoryCommittedHandler
-  implements ICommandHandler<InventoryCommittedCommand>
+@CommandHandler(MarkOrderAwaitingPaymentCommand)
+export class MarkOrderAwaitingPaymentHandler
+  implements ICommandHandler<MarkOrderAwaitingPaymentCommand>
 {
   constructor(
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: IOrderRepository,
   ) {}
 
-  async execute(command: InventoryCommittedCommand): Promise<any> {
+  async execute(command: MarkOrderAwaitingPaymentCommand): Promise<any> {
     const { orderId } = command;
 
     const order = await this.orderRepository.findById(orderId);
@@ -26,7 +26,7 @@ export class InventoryCommittedHandler
       );
     }
 
-    order?.markAsAwaitPayment();
+    order.markAsAwaitPayment();
 
     await this.orderRepository.persist(order);
   }

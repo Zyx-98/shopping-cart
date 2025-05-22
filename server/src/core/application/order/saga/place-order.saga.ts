@@ -3,9 +3,9 @@ import { ofType, Saga } from '@nestjs/cqrs';
 import { map, Observable } from 'rxjs';
 import { OrderCreatedEvent } from 'src/core/domain/order/event/order-created.event';
 import { ReserveInventoryForOrderCommand } from '../../inventory/command/remove-inventory/reserve-inventory-for-order.command';
-import { MarkOrderAsFailCommand } from '../command/mark-as-fail/mark-order-as-fail.command';
+import { MarkOrderFailCommand } from '../command/mark-order-fail/mark-order-fail.command';
 import { InsufficientInventoryOnOrderCreatedEvent } from '../../inventory/event/insufficient-inventory-on-order-created.event';
-import { InventoryCommittedCommand } from '../command/inventory-committed/inventory-committed.commad';
+import { MarkOrderAwaitingPaymentCommand } from '../command/mark-order-awaiting-payment/mark-order-awaiting-payment.commad';
 import { InventoryReservedForCreatedOrderEvent } from '../../inventory/event/inventory-reserved-for-created-order.event';
 
 @Injectable()
@@ -28,7 +28,7 @@ export class PlaceOrderSaga {
     return events$.pipe(
       ofType(InsufficientInventoryOnOrderCreatedEvent),
       map((event) => {
-        return new MarkOrderAsFailCommand(event.orderId);
+        return new MarkOrderFailCommand(event.orderId);
       }),
     );
   };
@@ -38,7 +38,7 @@ export class PlaceOrderSaga {
     return events$.pipe(
       ofType(InventoryReservedForCreatedOrderEvent),
       map((event) => {
-        return new InventoryCommittedCommand(event.orderId);
+        return new MarkOrderAwaitingPaymentCommand(event.orderId);
       }),
     );
   };
