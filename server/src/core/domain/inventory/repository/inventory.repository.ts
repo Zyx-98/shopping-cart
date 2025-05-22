@@ -6,7 +6,7 @@ import { InventoryAggregate } from '../aggregate/inventory.aggregate';
 export interface IInventoryRepository
   extends IReadableRepository<InventoryAggregate>,
     IWritableRepository<InventoryAggregate> {
-  findManyByProductId(productIds: ProductId[]): Promise<InventoryAggregate[]>;
+  findAllByProductId(productIds: ProductId[]): Promise<InventoryAggregate[]>;
   persistMany(entities: InventoryAggregate[]): Promise<void>;
 }
 

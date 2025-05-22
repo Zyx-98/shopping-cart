@@ -7,7 +7,6 @@ import { OrderLineId } from 'src/core/domain/order/value-object/order-line-ids.v
 import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 import { OrderStateMapper } from 'src/core/domain/order/mapper/order-state.mapper';
-import { OrderState } from 'src/core/domain/order/enum/order-state.enum';
 import { DeepPartial } from 'typeorm';
 
 export class PersistenceOrderMapper {
@@ -26,9 +25,7 @@ export class PersistenceOrderMapper {
           description: orderLine.description,
         }),
       ),
-      state: OrderStateMapper.mapToOrderState(
-        schema.state as unknown as OrderState,
-      ),
+      state: OrderStateMapper.mapToOrderState(schema.state),
       createdAt: schema.createdAt,
       updatedAt: schema.updatedAt,
     });

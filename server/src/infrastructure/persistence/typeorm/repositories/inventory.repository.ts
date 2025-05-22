@@ -16,14 +16,12 @@ export class InventoryRepository implements IInventoryRepository {
     private readonly ormRepository: Repository<InventorySchema>,
     private readonly mapper: PersistenceInventoryMapper,
   ) {}
-  async findManyByProductId(
+  async findAllByProductId(
     productIds: ProductId[],
   ): Promise<InventoryAggregate[]> {
     const schemas = await this.ormRepository.find({
       where: {
-        product: {
-          uuid: In(productIds.map((productId) => productId.toValue())),
-        },
+        productId: In(productIds.map((productId) => productId.toValue())),
       },
     });
 

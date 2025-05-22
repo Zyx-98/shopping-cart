@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { RemoveInventoryForCreatedOrderHandler } from './command/remove-inventory/remove-inventory-for-created-order.handler';
+import { ReserveInventoryForOrderHandler } from './command/remove-inventory/reserve-inventory-for-order.handler';
+import { RestoreInventoryHandler } from './command/add-inventory/restore-inventory.handler';
 
 @Module({
-  providers: [RemoveInventoryForCreatedOrderHandler],
-  exports: [RemoveInventoryForCreatedOrderHandler],
+  providers: [ReserveInventoryForOrderHandler, RestoreInventoryHandler],
+  exports: [ReserveInventoryForOrderHandler, RestoreInventoryHandler],
 })
 export class ApplicationInventoryModule {}

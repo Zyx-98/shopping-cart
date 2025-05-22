@@ -1,17 +1,17 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
-import { RemoveInventoryForCreatedOrderCommand } from './remove-inventory-for-created-order.command';
+import { ReserveInventoryForOrderCommand } from './reserve-inventory-for-order.command';
 import { Inject } from '@nestjs/common';
 import {
   IInventoryRepository,
   INVENTORY_REPOSITORY,
 } from 'src/core/domain/inventory/repository/inventory.repository';
 import { InsufficientInventoryAvailableException } from 'src/core/domain/inventory/exception/insufficient-inventory-available.aggregate';
-import { InsufficientInventoryAvailableForCreatedOrderEvent } from '../../event/insufficient-inventory-available-for-created-order.event';
-import { CommittedInventoryForCreatedOrderEvent } from '../../event/committed-inventory-for-created-order.event';
+import { InsufficientInventoryOnOrderCreatedEvent } from '../../event/insufficient-inventory-on-order-created.event';
+import { InventoryReservedForCreatedOrderEvent } from '../../event/inventory-reserved-for-created-order.event';
 
-@CommandHandler(RemoveInventoryForCreatedOrderCommand)
-export class RemoveInventoryForCreatedOrderHandler
-  implements ICommandHandler<RemoveInventoryForCreatedOrderCommand>
+@CommandHandler(ReserveInventoryForOrderCommand)
+export class ReserveInventoryForOrderHandler
+  implements ICommandHandler<ReserveInventoryForOrderCommand>
 {
   constructor(
     @Inject(INVENTORY_REPOSITORY)
@@ -19,11 +19,11 @@ export class RemoveInventoryForCreatedOrderHandler
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(command: RemoveInventoryForCreatedOrderCommand): Promise<void> {
+  async execute(command: ReserveInventoryForOrderCommand): Promise<void> {
     const { orderId, orderLines } = command;
 
     try {
-      const inventories = await this.inventoryRepository.findManyByProductId(
+      const inventories = await this.inventoryRepository.findAllByProductId(
         orderLines.map((line) => line.productId),
       );
 
@@ -37,13 +37,11 @@ export class RemoveInventoryForCreatedOrderHandler
       }
 
       await this.inventoryRepository.persistMany(inventories);
-      this.eventBus.publish(
-        new CommittedInventoryForCreatedOrderEvent(orderId),
-      );
+      this.eventBus.publish(new InventoryReservedForCreatedOrderEvent(orderId));
     } catch (error) {
       if (error instanceof InsufficientInventoryAvailableException) {
         this.eventBus.publish(
-          new InsufficientInventoryAvailableForCreatedOrderEvent(orderId),
+          new InsufficientInventoryOnOrderCreatedEvent(orderId),
         );
       }
     }
