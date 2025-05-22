@@ -3,17 +3,14 @@ import {
   CreateDateColumn,
   Entity,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CustomerSchema } from './customer.schema';
 
 @Entity('users')
 export class UserSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid', unique: true })
+  @PrimaryColumn({ type: 'uuid', unique: true })
   uuid: string;
 
   @Column({ type: 'varchar' })

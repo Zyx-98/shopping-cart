@@ -3,11 +3,11 @@ import {
   IProductRepository,
   PRODUCT_REPOSITORY,
 } from 'src/core/domain/product/repository/product.repository';
-import { GetProductListQuery } from './get-product-list.query';
 import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
-import { ProductDto } from '../dto/product.dto';
-import { ProductMapper } from '../mapper/product.mapper';
+import { ProductDto } from '../../dto/product.dto';
+import { ProductMapper } from '../../mapper/product.mapper';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { GetProductListQuery } from './get-product-list.query';
 
 @QueryHandler(GetProductListQuery)
 export class GetProductListHandler

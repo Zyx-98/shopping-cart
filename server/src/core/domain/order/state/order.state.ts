@@ -5,4 +5,6 @@ export interface IOrderState {
   state: OrderState;
   complete(order: OrderAggregate): void;
   cancel(order: OrderAggregate): void;
+  fail(order: OrderAggregate): void;
+  markAsAwaitPayment(order: OrderAggregate): void;
 }

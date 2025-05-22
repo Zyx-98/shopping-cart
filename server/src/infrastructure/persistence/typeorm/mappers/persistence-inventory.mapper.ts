@@ -11,15 +11,15 @@ export class PersistenceInventoryMapper {
   toDomain(schema: InventorySchema): InventoryAggregate {
     return InventoryAggregate.reconstitute({
       id: InventoryId.create(schema.uuid),
-      productId: ProductId.create(schema.product.uuid),
-      quantity: Quantity.create(schema.quantity),
+      productId: ProductId.create(schema.productId),
+      quantity: Quantity.create(schema.stock),
     });
   }
 
   toPersistence(aggregate: InventoryAggregate): DeepPartial<InventorySchema> {
     return {
       uuid: aggregate.id.toValue(),
-      quantity: aggregate.quantity.value,
+      stock: aggregate.quantity.value,
     };
   }
 }

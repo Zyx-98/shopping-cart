@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { CartModule } from './cart/cart.module';
-import { ProductModule } from './product/product.module';
+import { RestAuthModule } from './auth/auth.module';
+import { RestCartModule } from './cart/cart.module';
+import { RestProductModule } from './product/product.module';
+import { RestOrderModule } from './order/order.module';
 
 @Module({
-  imports: [AuthModule, CartModule, ProductModule],
+  imports: [RestAuthModule, RestCartModule, RestProductModule, RestOrderModule],
 })
 export class RestModule {}

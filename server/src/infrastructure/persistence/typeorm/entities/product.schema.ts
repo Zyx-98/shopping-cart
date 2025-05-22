@@ -2,18 +2,17 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { InventorySchema } from './inventory.schema';
+import { OrderLineSchema } from './order-line.schema';
 
 @Entity('products')
 export class ProductSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid', unique: true })
+  @PrimaryColumn({ type: 'uuid', unique: true })
   uuid: string;
 
   @Column({ type: 'varchar' })
@@ -32,4 +31,7 @@ export class ProductSchema {
     cascade: true,
   })
   inventory: InventorySchema;
+
+  @OneToMany(() => OrderLineSchema, (orderLine) => orderLine.product)
+  orderLines: OrderLineSchema[];
 }

@@ -25,6 +25,11 @@ import { INVENTORY_REPOSITORY } from 'src/core/domain/inventory/repository/inven
 import { InventoryRepository } from './repositories/inventory.repository';
 import { PaymentSchema } from './entities/payment.schema';
 import { CouponSchema } from './entities/coupon.schema';
+import { PersistenceOrderMapper } from './mappers/persistence-order.mapper';
+import { ORDER_REPOSITORY } from 'src/core/domain/order/repository/order.repository';
+import { OrderRepository } from './repositories/order.repository';
+import { OrderSchema } from './entities/order.schema';
+import { OrderLineSchema } from './entities/order-line.schema';
 
 @Module({
   imports: [
@@ -37,6 +42,8 @@ import { CouponSchema } from './entities/coupon.schema';
       InventorySchema,
       PaymentSchema,
       CouponSchema,
+      OrderSchema,
+      OrderLineSchema,
     ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     TypeormQueryBuilderModule,
@@ -47,6 +54,7 @@ import { CouponSchema } from './entities/coupon.schema';
     PersistenceProductMapper,
     PersistenceCartMapper,
     PersistenceInventoryMapper,
+    PersistenceOrderMapper,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
@@ -67,6 +75,10 @@ import { CouponSchema } from './entities/coupon.schema';
       provide: INVENTORY_REPOSITORY,
       useClass: InventoryRepository,
     },
+    {
+      provide: ORDER_REPOSITORY,
+      useClass: OrderRepository,
+    },
   ],
   exports: [
     USER_REPOSITORY,
@@ -74,6 +86,7 @@ import { CouponSchema } from './entities/coupon.schema';
     PRODUCT_REPOSITORY,
     CART_REPOSITORY,
     INVENTORY_REPOSITORY,
+    ORDER_REPOSITORY,
     TypeormQueryBuilderModule,
   ],
 })

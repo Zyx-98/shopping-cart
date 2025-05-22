@@ -23,16 +23,8 @@ export class CustomerRepository implements ICustomerRepository {
     throw new Error('Method not implemented.');
   }
   async findByUniqueId(userId: UserId): Promise<CustomerAggregate | null> {
-    const user = await this.userRepository.findOne({
-      where: {
-        uuid: userId.toString(),
-      },
-    });
-
-    if (!user) return null;
-
     const schema = await this.customerRepository.findOne({
-      where: { userId: user.id },
+      where: { userId: userId.toString() },
     });
 
     if (!schema) return null;

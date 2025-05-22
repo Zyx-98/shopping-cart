@@ -2,17 +2,16 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { UserSchema } from './user.schema';
+import { OrderSchema } from './order.schema';
 
 @Entity('customers')
 export class CustomerSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid', unique: true })
+  @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
   @Column({ type: 'varchar' })
@@ -27,10 +26,13 @@ export class CustomerSchema {
   @Column({ type: 'varchar' })
   phone: string;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @Column({ type: 'uuid', name: 'user_id' })
+  userId: string;
 
   @OneToOne((_) => UserSchema)
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'uuid' })
   user: UserSchema;
+
+  @OneToMany(() => OrderSchema, (order) => order.customer)
+  orders: OrderSchema[];
 }

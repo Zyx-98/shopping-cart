@@ -5,7 +5,7 @@ import {
   JoinColumn,
   OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CustomerSchema } from './customer.schema';
@@ -13,17 +13,14 @@ import { CartItemSchema } from './cart-item.schema';
 
 @Entity('carts')
 export class CartSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid', unique: true })
+  @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
-  @Column({ type: 'int' })
-  customerId: number;
+  @Column({ type: 'uuid' })
+  customerId: string;
 
   @OneToOne((_) => CustomerSchema)
-  @JoinColumn({ name: 'customer_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'customer_id', referencedColumnName: 'uuid' })
   customer: CustomerSchema;
 
   @OneToMany(() => CartItemSchema, (cartItem) => cartItem.cart)

@@ -34,6 +34,8 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
+  app.useBodyParser('json');
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Shopping Cart APi')
     .setDescription('Api documentation for the shopping cart')

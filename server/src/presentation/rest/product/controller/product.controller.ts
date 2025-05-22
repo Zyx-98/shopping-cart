@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { GetProductListQuery } from 'src/core/application/product/query/get-product-list.query';
+import { GetProductListQuery } from 'src/core/application/product/query/get-product-list/get-product-list.query';
 import { ProductQueryDto } from '../dto/product-query.dto';
 import { ProductDto } from 'src/core/application/product/dto/product.dto';
 import { PaginatedResultDto } from '../../shared/dto/paginated-result.dto';

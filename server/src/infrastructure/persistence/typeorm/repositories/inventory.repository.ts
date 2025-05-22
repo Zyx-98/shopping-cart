@@ -5,8 +5,9 @@ import { IInventoryRepository } from 'src/core/domain/inventory/repository/inven
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 import { QueryCriteria } from 'src/core/domain/shared/types/pagination.type';
 import { InventorySchema } from '../entities/inventory.schema';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PersistenceInventoryMapper } from '../mappers/persistence-inventory.mapper';
+import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 
 @Injectable()
 export class InventoryRepository implements IInventoryRepository {
@@ -15,6 +16,35 @@ export class InventoryRepository implements IInventoryRepository {
     private readonly ormRepository: Repository<InventorySchema>,
     private readonly mapper: PersistenceInventoryMapper,
   ) {}
+  async findManyByProductId(
+    productIds: ProductId[],
+  ): Promise<InventoryAggregate[]> {
+    const schemas = await this.ormRepository.find({
+      where: {
+        product: {
+          uuid: In(productIds.map((productId) => productId.toValue())),
+        },
+      },
+    });
+
+    return schemas.map((schema) => this.mapper.toDomain(schema));
+  }
+  async persistMany(entities: InventoryAggregate[]): Promise<void> {
+    const schemas = entities.map((entity) => this.mapper.toPersistence(entity));
+
+    const existingSchemas = await this.ormRepository.find({
+      where: {
+        uuid: In(schemas.map((schema) => schema.uuid)),
+      },
+    });
+
+    await this.ormRepository.save(
+      existingSchemas.map((existingSchema) => ({
+        ...existingSchema,
+        ...schemas.find((schema) => schema.uuid === existingSchema.uuid),
+      })),
+    );
+  }
   findAll(_criteria: QueryCriteria): Promise<InventoryAggregate[]> {
     throw new Error('Method not implemented.');
   }
@@ -41,17 +71,7 @@ export class InventoryRepository implements IInventoryRepository {
   async persist(entity: InventoryAggregate): Promise<InventoryAggregate> {
     const persistence = this.mapper.toPersistence(entity);
 
-    let inventory = await this.ormRepository.findOne({
-      where: {
-        uuid: persistence.uuid,
-      },
-    });
-
-    if (!inventory) {
-      inventory = this.ormRepository.create(persistence);
-    } else {
-      inventory = await this.ormRepository.save(persistence);
-    }
+    const inventory = await this.ormRepository.save(persistence);
 
     return this.mapper.toDomain(inventory);
   }

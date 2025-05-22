@@ -4,21 +4,21 @@ import {
   Entity,
   JoinColumn,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductSchema } from './product.schema';
 
 @Entity('inventories')
 export class InventorySchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
+  @Column({ name: 'product_id', type: 'uuid' })
+  productId: string;
+
   @Column({ type: 'int' })
-  quantity: number;
+  stock: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
@@ -27,6 +27,6 @@ export class InventorySchema {
   updatedAt: Date;
 
   @OneToOne(() => ProductSchema)
-  @JoinColumn({ name: 'product_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'product_id', referencedColumnName: 'uuid' })
   product: ProductSchema;
 }

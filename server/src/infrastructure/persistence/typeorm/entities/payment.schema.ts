@@ -2,16 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('payments')
 export class PaymentSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
   @Column({ type: 'varchar', length: 50 })

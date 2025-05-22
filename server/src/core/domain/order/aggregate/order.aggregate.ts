@@ -1,12 +1,14 @@
 import { OrderId } from '../value-object/order-id.vo';
 import { CouponId } from '../../coupon/value-objects/coupon-id.vo';
-import { IOrderState } from '../state/order-state.state';
+import { IOrderState } from '../state/order.state';
 import { OrderLine, OrderLineProps } from '../entity/order-line.entity';
 import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 import { CustomerId } from '../../customer/value-object/customer-id.vo';
 import { OrderException } from '../exception/order.exception';
 import { PendingOrderState } from '../state/pending-order-state.state';
 import { OrderState } from '../enum/order-state.enum';
+import { Price } from '../../shared/domain/value-object/price.vo';
+import { OrderCreatedEvent } from '../event/order-created.event';
 
 export interface OrderProps {
   id: OrderId;
@@ -46,6 +48,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     this._completedAt = props.completedAt;
     this._createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
+    this._orderLines = props.orderLines;
   }
 
   public static create(
@@ -65,6 +68,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
         lineData.productId,
         lineData.productId.toString(),
         lineData.quantity.value,
+        lineData.itemPrice?.amount || 0,
       ),
     );
 
@@ -133,6 +137,16 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     this._updatedAt = new Date();
   }
 
+  public markAsFail(): void {
+    this._state.fail(this);
+    this._updatedAt = new Date();
+  }
+
+  public markAsAwaitPayment(): void {
+    this._state.markAsAwaitPayment(this);
+    this._updatedAt = new Date();
+  }
+
   public setCompletedAt(date: Date): void {
     this._completedAt = date;
   }
@@ -151,5 +165,22 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     }
     this._invoicePath = path;
     this._updatedAt = new Date();
+  }
+
+  public getTotalPrice(): Price {
+    return this._orderLines.reduce((total, line) => {
+      return total.add(line.itemPrice || Price.create(0));
+    }, Price.create(0));
+  }
+
+  public applyCreatedEvent(): void {
+    this.apply(
+      new OrderCreatedEvent(
+        this.id,
+        this.customerId,
+        this.orderLines,
+        this.getTotalPrice(),
+      ),
+    );
   }
 }

@@ -4,9 +4,8 @@ export class CreatePaymentsTable1743329171049 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         CREATE TABLE IF NOT EXISTS payments (
-            id SERIAL PRIMARY KEY,
-            uuid UUID NOT NULL UNIQUE,
-            order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+            uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            order_id UUID NOT NULL,
             state VARCHAR(50) NOT NULL,
             total_item_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
             failed_at TIMESTAMP DEFAULT NULL,
@@ -14,11 +13,15 @@ export class CreatePaymentsTable1743329171049 implements MigrationInterface {
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );
+        CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
+        CREATE INDEX IF NOT EXISTS idx_payments_state ON payments(state);
         `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
+        DROP INDEX IF EXISTS idx_payments_order_id;
+        DROP INDEX IF EXISTS idx_payments_state;
         DROP TABLE IF EXISTS payments;
         `);
   }

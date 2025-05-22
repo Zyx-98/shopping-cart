@@ -1,0 +1,89 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { IsCustomerGuard } from 'src/infrastructure/auth/guards/is-customer.guard';
+import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
+import { RequestWithUser } from '../../auth/shared/request/request-with-user.request';
+import { GetOrderDetailQuery } from 'src/core/application/order/query/get-order-detail/get-order-detail.query';
+import { OrderId } from 'src/core/domain/order/value-object/order-id.vo';
+import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
+import { OrderAggregate } from 'src/core/domain/order/aggregate/order.aggregate';
+import { PlaceOrderDto } from '../dto/place-order.dto';
+import { PlaceOrderCommand } from 'src/core/application/order/command/place-order/place-order.command';
+import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
+import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
+import { PlaceOrderResponseDto } from '../dto/place-order-response.dto';
+
+@ApiTags('Order')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(JwtAuthGuard, IsCustomerGuard)
+@Controller('orders')
+export class OrderController {
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
+
+  @Get(':orderId')
+  @ApiOperation({ summary: 'Get order details by order ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Order details retrieved successfully',
+    type: OrderAggregate,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found',
+  })
+  getOrderDetail(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @Req() req: RequestWithUser,
+  ): Promise<OrderAggregate> {
+    const query = new GetOrderDetailQuery(
+      OrderId.create(orderId),
+      CustomerId.create(req.user.customerId || ''),
+    );
+
+    return this.queryBus.execute(query);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Place a new order' })
+  @ApiResponse({
+    status: 201,
+    description: 'Order placed successfully',
+    type: PlaceOrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid order data',
+  })
+  async placeOrder(
+    @Body() placeOrderDto: PlaceOrderDto,
+    @Req() req: RequestWithUser,
+  ): Promise<PlaceOrderResponseDto> {
+    const command = new PlaceOrderCommand(
+      CustomerId.create(req.user.customerId || ''),
+      placeOrderDto.selectedProducts.map((selectedProduct) => ({
+        productId: ProductId.create(selectedProduct.productId),
+        quantity: Quantity.create(selectedProduct.quantity),
+      })),
+    );
+
+    return this.commandBus.execute(command);
+  }
+}

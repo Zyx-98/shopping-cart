@@ -1,18 +1,9 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { CartSchema } from './cart.schema';
 
 @Entity('cart_items')
 export class CartItemSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid', unique: true })
+  @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
   @Column({ type: 'int' })
@@ -21,10 +12,10 @@ export class CartItemSchema {
   @Column({ type: 'numeric' })
   price: number;
 
-  @Column({ type: 'int' })
-  productId: number;
+  @Column({ type: 'uuid', nullable: false })
+  productId: string;
 
   @ManyToOne(() => CartSchema, (cart) => cart.cartItems)
-  @JoinColumn({ name: 'cart_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'cart_id', referencedColumnName: 'uuid' })
   cart: CartSchema;
 }

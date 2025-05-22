@@ -17,7 +17,7 @@ export class InventoryFactory extends Factory<InventorySchema> {
   protected attrs(): FactorizedAttrs<InventorySchema> {
     return {
       uuid: randomUUID(),
-      quantity: faker.number.int({ min: 2, max: 100 }),
+      stock: faker.number.int({ min: 2, max: 100 }),
       product: new EagerInstanceAttribute(
         (instance) =>
           new SingleSubfactory(ProductFactory, { inventory: instance }),

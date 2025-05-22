@@ -46,7 +46,7 @@ export class CartRepository implements ICartRepository {
     throw new Error('Method not implemented.');
   }
   async persist(entity: CartAggregate): Promise<CartAggregate> {
-    const persistence = await this.mapper.toPersistence(entity);
+    const persistence = this.mapper.toPersistence(entity);
 
     let cart = await this.ormRepository.findOne({
       where: { uuid: entity.id.toString() },
@@ -69,7 +69,9 @@ export class CartRepository implements ICartRepository {
     const incomingItems = persistence.cartItems || ([] as CartItemSchema[]);
 
     for (const incomingItem of incomingItems) {
-      const existingItem = existingCartItemMap.get(incomingItem.productId || 0);
+      const existingItem = existingCartItemMap.get(
+        incomingItem.productId || '',
+      );
 
       if (existingItem) {
         if (

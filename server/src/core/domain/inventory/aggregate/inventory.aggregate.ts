@@ -2,7 +2,7 @@ import { ProductId } from '../../product/value-object/product-id.vo';
 import { InventoryId } from '../value-object/inventory-id.vo';
 import { Quantity } from '../../shared/domain/value-object/quantity.vo';
 import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
-import { InventoryException } from '../exception/inventory.exception';
+import { InsufficientInventoryAvailableException } from '../exception/insufficient-inventory-available.aggregate';
 
 export interface InventoryProps {
   id: InventoryId;
@@ -63,15 +63,17 @@ export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
     return this._quantity.subtract(quantity).isLessThan(this._available);
   }
 
-  public addInventory(quantity: Quantity): void {
+  public addQuantity(quantity: Quantity): void {
     this._quantity = this._quantity.add(quantity);
   }
 
-  public removeInventory(quantity: Quantity): void {
+  public removeQuantity(quantity: Quantity): void {
     const newQuantity = this._quantity.subtract(quantity);
     if (newQuantity.isLessThan(this._available)) {
-      throw new InventoryException(
-        `Not enough available inventory for ${this.productId.toString()}`,
+      throw new InsufficientInventoryAvailableException(
+        this._productId.toValue(),
+        this._quantity.toNumber(),
+        quantity.toNumber(),
       );
     }
 

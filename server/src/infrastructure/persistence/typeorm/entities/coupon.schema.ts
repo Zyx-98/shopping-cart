@@ -2,15 +2,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
+  OneToMany,
+  PrimaryColumn,
 } from 'typeorm';
+import { OrderSchema } from './order.schema';
 
 @Entity('coupons')
 export class CouponSchema {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
   @Column({ type: 'varchar', length: 100 })
@@ -27,4 +26,7 @@ export class CouponSchema {
 
   @CreateDateColumn({ type: 'time with time zone', name: 'updated_at' })
   updatedAt: Date;
+
+  @OneToMany(() => OrderSchema, (order) => order.coupon)
+  orders: OrderSchema[];
 }
