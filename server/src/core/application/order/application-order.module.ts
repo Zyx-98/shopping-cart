@@ -4,6 +4,8 @@ import { GetOrderDetailHandler } from './query/get-order-detail/get-order-detail
 import { PlaceOrderHandler } from './command/place-order/place-order.handler';
 import { MarkOrderFailHandler } from './command/mark-order-fail/mark-order-fail.handler';
 import { MarkOrderAwaitingPaymentHandler } from './command/mark-order-awaiting-payment/mark-order-awaiting-payment.handler';
+import { CancelOrderHandler } from './command/cancel-order/cancel-order.handler';
+import { OrderMapper } from './mapper/order.mapper';
 
 @Module({
   providers: [
@@ -12,6 +14,8 @@ import { MarkOrderAwaitingPaymentHandler } from './command/mark-order-awaiting-p
     PlaceOrderHandler,
     MarkOrderFailHandler,
     MarkOrderAwaitingPaymentHandler,
+    CancelOrderHandler,
+    OrderMapper,
   ],
   exports: [
     PlaceOrderSaga,
@@ -19,6 +23,8 @@ import { MarkOrderAwaitingPaymentHandler } from './command/mark-order-awaiting-p
     PlaceOrderHandler,
     MarkOrderFailHandler,
     MarkOrderAwaitingPaymentHandler,
+    CancelOrderHandler,
+    OrderMapper,
   ],
 })
 export class ApplicationOrderModule {}

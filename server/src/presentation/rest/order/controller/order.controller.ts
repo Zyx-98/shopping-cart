@@ -21,12 +21,13 @@ import { RequestWithUser } from '../../auth/shared/request/request-with-user.req
 import { GetOrderDetailQuery } from 'src/core/application/order/query/get-order-detail/get-order-detail.query';
 import { OrderId } from 'src/core/domain/order/value-object/order-id.vo';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
-import { OrderAggregate } from 'src/core/domain/order/aggregate/order.aggregate';
 import { PlaceOrderDto } from '../dto/place-order.dto';
 import { PlaceOrderCommand } from 'src/core/application/order/command/place-order/place-order.command';
 import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 import { PlaceOrderResponseDto } from '../dto/place-order-response.dto';
+import { CancelOrderCommand } from 'src/core/application/order/command/cancel-order/cancel-order.command';
+import { OrderDetailDto } from 'src/core/application/order/dto/order-detail.dto';
 
 @ApiTags('Order')
 @ApiBearerAuth('JWT-auth')
@@ -43,7 +44,7 @@ export class OrderController {
   @ApiResponse({
     status: 200,
     description: 'Order details retrieved successfully',
-    type: OrderAggregate,
+    type: OrderDetailDto,
   })
   @ApiResponse({
     status: 404,
@@ -52,7 +53,7 @@ export class OrderController {
   getOrderDetail(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Req() req: RequestWithUser,
-  ): Promise<OrderAggregate> {
+  ): Promise<OrderDetailDto> {
     const query = new GetOrderDetailQuery(
       OrderId.create(orderId),
       CustomerId.create(req.user.customerId || ''),
@@ -82,6 +83,28 @@ export class OrderController {
         productId: ProductId.create(selectedProduct.productId),
         quantity: Quantity.create(selectedProduct.quantity),
       })),
+    );
+
+    return this.commandBus.execute(command);
+  }
+
+  @Post(':orderId/cancel')
+  @ApiOperation({ summary: 'Cancel an order' })
+  @ApiResponse({
+    status: 200,
+    description: 'Order cancelled successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found',
+  })
+  async cancelOrder(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @Req() req: RequestWithUser,
+  ): Promise<void> {
+    const command = new CancelOrderCommand(
+      OrderId.create(orderId),
+      CustomerId.create(req.user.customerId || ''),
     );
 
     return this.commandBus.execute(command);

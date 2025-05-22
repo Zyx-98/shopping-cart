@@ -4,7 +4,7 @@ import { ProductAggregate } from 'src/core/domain/product/aggregate/product.aggr
 import { IProductRepository } from 'src/core/domain/product/repository/product.repository';
 import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { ProductSchema } from '../entities/product.schema';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PersistenceProductMapper } from '../mappers/persistence-product.mapper';
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 import {
@@ -22,6 +22,15 @@ export class ProductRepository implements IProductRepository {
     private readonly mapper: PersistenceProductMapper,
     private readonly queryBuilderService: TypeOrmQueryBuilderService,
   ) {}
+  async findAllByIds(ProductIds: ProductId[]): Promise<ProductAggregate[]> {
+    const schemas = await this.ormRepository.find({
+      where: {
+        uuid: In(ProductIds.map((productId) => productId.toString())),
+      },
+    });
+
+    return schemas.map((schema) => this.mapper.toDomain(schema));
+  }
   findAll(_criteria: QueryCriteria): Promise<ProductAggregate[]> {
     throw new Error('Method not implemented.');
   }

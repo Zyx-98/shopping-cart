@@ -162,13 +162,7 @@ export class TypeOrmQueryBuilderService {
     if (cursorToDecode) {
       try {
         const decoded = this.decodeCursor(cursorToDecode);
-        this.applyCursorCondition<T>(
-          queryBuilder,
-          decoded,
-          actualSorts,
-          alias,
-          seekingPrevious,
-        );
+        this.applyCursorCondition<T>(queryBuilder, decoded, actualSorts, alias);
       } catch (error) {
         this.logger.warn(`Invalid cursor provided: ${cursorToDecode}`, error);
         throw new BadRequestException('Invalid cursor format.');
@@ -374,7 +368,6 @@ export class TypeOrmQueryBuilderService {
     decodedCursor: DecodedCursor,
     sorts: SortParams[],
     alias: string,
-    seekingPrevious: boolean,
   ): void {
     qb.andWhere(
       new Brackets((subQuery) => {
@@ -394,9 +387,7 @@ export class TypeOrmQueryBuilderService {
             const direction = sorts[i].direction;
 
             const operator = direction === 'ASC' ? '>' : '<';
-            if (seekingPrevious) {
-              console.log('!!!TODO!!!'); // TODO
-            }
+
             const paramName = `cursorValue_${sortField}_op_${i}`;
 
             innerSubQuery.andWhere(

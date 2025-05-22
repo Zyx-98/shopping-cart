@@ -20,13 +20,11 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
 
     const aggregate = OrderAggregate.create(customerId, selectedProducts);
 
-    const order = this.publisher.mergeObjectContext(
-      await this.orderRepository.persist(aggregate),
-    );
+    const order = await this.orderRepository.persist(aggregate);
 
-    order.applyCreatedEvent();
+    this.publisher.mergeObjectContext(aggregate);
 
-    order.commit();
+    aggregate.commit();
 
     return { uuid: order.id.toString() };
   }

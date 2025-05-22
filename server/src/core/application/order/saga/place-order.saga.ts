@@ -7,6 +7,8 @@ import { MarkOrderFailCommand } from '../command/mark-order-fail/mark-order-fail
 import { InsufficientInventoryOnOrderCreatedEvent } from '../../inventory/event/insufficient-inventory-on-order-created.event';
 import { MarkOrderAwaitingPaymentCommand } from '../command/mark-order-awaiting-payment/mark-order-awaiting-payment.commad';
 import { InventoryReservedForCreatedOrderEvent } from '../../inventory/event/inventory-reserved-for-created-order.event';
+import { RestoreInventoryCommand } from '../../inventory/command/add-inventory/restore-inventory.command';
+import { OrderCanceledEvent } from 'src/core/domain/order/event/order-canceled.event';
 
 @Injectable()
 export class PlaceOrderSaga {
@@ -39,6 +41,16 @@ export class PlaceOrderSaga {
       ofType(InventoryReservedForCreatedOrderEvent),
       map((event) => {
         return new MarkOrderAwaitingPaymentCommand(event.orderId);
+      }),
+    );
+  };
+
+  @Saga()
+  orderCanceled = (events$: Observable<any>): Observable<any> => {
+    return events$.pipe(
+      ofType(OrderCanceledEvent),
+      map((event) => {
+        return new RestoreInventoryCommand(event.orderLines);
       }),
     );
   };

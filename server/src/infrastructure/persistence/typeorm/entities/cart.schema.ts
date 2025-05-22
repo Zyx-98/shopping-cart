@@ -23,7 +23,9 @@ export class CartSchema {
   @JoinColumn({ name: 'customer_id', referencedColumnName: 'uuid' })
   customer: CustomerSchema;
 
-  @OneToMany(() => CartItemSchema, (cartItem) => cartItem.cart)
+  @OneToMany(() => CartItemSchema, (cartItem) => cartItem.cart, {
+    cascade: true,
+  })
   cartItems: CartItemSchema[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })

@@ -37,6 +37,7 @@ export class PersistenceOrderMapper {
       customerId: aggregate.customerId.toValue(),
       orderLines: aggregate.orderLines.map((orderLine) => ({
         uuid: orderLine.id.toValue(),
+        orderId: aggregate.id.toValue(),
         productId: orderLine.productId.toValue(),
         quantity: orderLine.quantity.value,
         description: orderLine.description,

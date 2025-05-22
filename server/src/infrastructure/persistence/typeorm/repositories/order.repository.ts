@@ -44,9 +44,7 @@ export class OrderRepository implements IOrderRepository {
       },
       relations: {
         customer: true,
-        orderLines: {
-          product: true,
-        },
+        orderLines: true,
       },
     });
 

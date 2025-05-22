@@ -9,6 +9,7 @@ import { PendingOrderState } from '../state/pending-order-state.state';
 import { OrderState } from '../enum/order-state.enum';
 import { Price } from '../../shared/domain/value-object/price.vo';
 import { OrderCreatedEvent } from '../event/order-created.event';
+import { OrderCanceledEvent } from '../event/order-canceled.event';
 
 export interface OrderProps {
   id: OrderId;
@@ -84,6 +85,15 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
 
     const order = new OrderAggregate(props);
 
+    order.apply(
+      new OrderCreatedEvent(
+        orderId,
+        customerId,
+        orderLines,
+        order.getTotalPrice(),
+      ),
+    );
+
     return order;
   }
 
@@ -135,6 +145,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
   public cancelOrder(): void {
     this._state.cancel(this);
     this._updatedAt = new Date();
+    this.apply(new OrderCanceledEvent(this.id, this.orderLines));
   }
 
   public markAsFail(): void {
@@ -171,16 +182,5 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     return this._orderLines.reduce((total, line) => {
       return total.add(line.itemPrice || Price.create(0));
     }, Price.create(0));
-  }
-
-  public applyCreatedEvent(): void {
-    this.apply(
-      new OrderCreatedEvent(
-        this.id,
-        this.customerId,
-        this.orderLines,
-        this.getTotalPrice(),
-      ),
-    );
   }
 }

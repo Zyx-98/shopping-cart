@@ -38,7 +38,9 @@ export class OrderSchema {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @OneToMany(() => OrderLineSchema, (orderLine) => orderLine.order)
+  @OneToMany(() => OrderLineSchema, (orderLine) => orderLine.order, {
+    cascade: true,
+  })
   orderLines: OrderLineSchema[];
 
   @ManyToOne(() => CustomerSchema, (customer) => customer.orders)

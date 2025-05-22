@@ -5,7 +5,12 @@ import {
   IOrderRepository,
   ORDER_REPOSITORY,
 } from 'src/core/domain/order/repository/order.repository';
-import { OrderAggregate } from 'src/core/domain/order/aggregate/order.aggregate';
+import {
+  IProductRepository,
+  PRODUCT_REPOSITORY,
+} from 'src/core/domain/product/repository/product.repository';
+import { OrderMapper } from '../../mapper/order.mapper';
+import { OrderDetailDto } from '../../dto/order-detail.dto';
 
 @QueryHandler(GetOrderDetailQuery)
 export class GetOrderDetailHandler
@@ -14,9 +19,12 @@ export class GetOrderDetailHandler
   constructor(
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: IOrderRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: IProductRepository,
+    private readonly orderMapper: OrderMapper,
   ) {}
 
-  async execute(query: GetOrderDetailQuery): Promise<OrderAggregate> {
+  async execute(query: GetOrderDetailQuery): Promise<OrderDetailDto> {
     const { orderId, customerId } = query;
 
     const order = await this.orderRepository.findBelongToCustomerById(
@@ -30,6 +38,10 @@ export class GetOrderDetailHandler
       );
     }
 
-    return order;
+    const products = await this.productRepository.findAllByIds(
+      order.orderLines.map((orderline) => orderline.productId),
+    );
+
+    return this.orderMapper.toDto(order, products);
   }
 }
