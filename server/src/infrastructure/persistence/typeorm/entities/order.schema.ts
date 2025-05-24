@@ -5,12 +5,14 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderLineSchema } from './order-line.schema';
 import { CustomerSchema } from './customer.schema';
 import { CouponSchema } from './coupon.schema';
+import { PaymentSchema } from './payment.schema';
 
 @Entity('orders')
 export class OrderSchema {
@@ -50,4 +52,7 @@ export class OrderSchema {
   @ManyToOne(() => CouponSchema, (coupon) => coupon.orders)
   @JoinColumn({ name: 'coupon_id', referencedColumnName: 'uuid' })
   coupon?: CouponSchema;
+
+  @OneToOne(() => PaymentSchema, (payment) => payment.order)
+  payment?: PaymentSchema;
 }

@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { MarkOrderAwaitingPaymentCommand } from './mark-order-awaiting-payment.commad';
+import { MarkOrderAwaitingPaymentCommand } from './mark-order-awaiting-payment.command';
 import { Inject, NotFoundException } from '@nestjs/common';
 import {
   IOrderRepository,

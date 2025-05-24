@@ -1,5 +1,6 @@
 import { PaymentAggregate } from '../aggregate/payment.aggregate';
 import { PaymentState } from '../enum/payment-state.enum';
+import { PaymentAlreadyInStateException } from '../exception/payment-already-in-state-exception.exception';
 import { OpenPaymentState } from './open-payment-state.state';
 import { PaidPaymentState } from './paid-payment-state.state';
 import { IPaymentState } from './payment-state.state';
@@ -16,6 +17,6 @@ export class FailedPaymentState implements IPaymentState {
   }
 
   public fail(): void {
-    throw new Error('Payment is already open');
+    throw new PaymentAlreadyInStateException(this.state);
   }
 }

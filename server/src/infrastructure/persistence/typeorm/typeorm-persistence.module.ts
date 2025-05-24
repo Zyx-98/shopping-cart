@@ -30,6 +30,9 @@ import { ORDER_REPOSITORY } from 'src/core/domain/order/repository/order.reposit
 import { OrderRepository } from './repositories/order.repository';
 import { OrderSchema } from './entities/order.schema';
 import { OrderLineSchema } from './entities/order-line.schema';
+import { PersistencePaymentMapper } from './mappers/persistence-payment.mapper';
+import { PAYMENT_REPOSITORY } from 'src/core/domain/payment/repository/payment.repository';
+import { PaymentRepository } from './repositories/payment.repository';
 
 @Module({
   imports: [
@@ -55,6 +58,7 @@ import { OrderLineSchema } from './entities/order-line.schema';
     PersistenceCartMapper,
     PersistenceInventoryMapper,
     PersistenceOrderMapper,
+    PersistencePaymentMapper,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
@@ -79,6 +83,10 @@ import { OrderLineSchema } from './entities/order-line.schema';
       provide: ORDER_REPOSITORY,
       useClass: OrderRepository,
     },
+    {
+      provide: PAYMENT_REPOSITORY,
+      useClass: PaymentRepository,
+    },
   ],
   exports: [
     USER_REPOSITORY,
@@ -87,6 +95,7 @@ import { OrderLineSchema } from './entities/order-line.schema';
     CART_REPOSITORY,
     INVENTORY_REPOSITORY,
     ORDER_REPOSITORY,
+    PAYMENT_REPOSITORY,
     TypeormQueryBuilderModule,
   ],
 })

@@ -100,12 +100,8 @@ export class OrderController {
   })
   async cancelOrder(
     @Param('orderId', ParseUUIDPipe) orderId: string,
-    @Req() req: RequestWithUser,
   ): Promise<void> {
-    const command = new CancelOrderCommand(
-      OrderId.create(orderId),
-      CustomerId.create(req.user.customerId || ''),
-    );
+    const command = new CancelOrderCommand(OrderId.create(orderId));
 
     return this.commandBus.execute(command);
   }

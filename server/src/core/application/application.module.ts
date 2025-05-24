@@ -4,6 +4,7 @@ import { ApplicationOrderModule } from './order/application-order.module';
 import { ApplicationInventoryModule } from './inventory/application-inventory.module';
 import { ApplicationCartModule } from './cart/application-cart.module';
 import { ApplicationAuthModule } from './auth/application-auth.module';
+import { ApplicationPaymentModule } from './payment/application-payment.module';
 
 @Global()
 @Module({
@@ -13,6 +14,7 @@ import { ApplicationAuthModule } from './auth/application-auth.module';
     ApplicationInventoryModule,
     ApplicationCartModule,
     ApplicationAuthModule,
+    ApplicationPaymentModule,
   ],
   exports: [
     ApplicationProductModule,
@@ -20,6 +22,7 @@ import { ApplicationAuthModule } from './auth/application-auth.module';
     ApplicationInventoryModule,
     ApplicationCartModule,
     ApplicationAuthModule,
+    ApplicationPaymentModule,
   ],
 })
 export class ApplicationModule {}

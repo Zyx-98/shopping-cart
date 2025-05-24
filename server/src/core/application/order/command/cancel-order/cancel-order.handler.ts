@@ -15,12 +15,9 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
   ) {}
 
   async execute(command: CancelOrderCommand): Promise<void> {
-    const { orderId, customerId } = command;
+    const { orderId } = command;
 
-    const order = await this.orderRepository.findBelongToCustomerById(
-      orderId,
-      customerId,
-    );
+    const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
       throw new NotFoundException(
