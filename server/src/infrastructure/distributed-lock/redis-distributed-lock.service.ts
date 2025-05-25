@@ -1,14 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDistributedLockService } from 'src/core/application/port/distributed-lock.interface';
-import { REDIS_DISTRIBUTED_LOCK_CLIENT } from './redis-distributed-lock.constant';
 import Redis from 'ioredis';
 import { v4 } from 'uuid';
+import { REDIS_CLIENT } from '../redis/redis.constant';
 
 @Injectable()
 export class RedisDistributedLockService implements IDistributedLockService {
-  constructor(
-    @Inject(REDIS_DISTRIBUTED_LOCK_CLIENT) private readonly redisClient: Redis,
-  ) {}
+  constructor(@Inject(REDIS_CLIENT) private readonly redisClient: Redis) {}
   async acquire(
     lockName: string,
     lockTimeoutMs: number,

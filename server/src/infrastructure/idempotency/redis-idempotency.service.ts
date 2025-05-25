@@ -4,21 +4,19 @@ import {
   IIdempotencyService,
   StoredResponse,
 } from 'src/core/application/port/idempotency.interface';
-import { REDIS_IDEMPOTENT_CLIENT } from './redis-idempotent.constant';
+import { REDIS_CLIENT } from '../redis/redis.constant';
 
 const IDEMPOTENT_KEY_PREFIX = 'idempotency:';
 
 @Injectable()
-export class RedisIdempotentService implements IIdempotencyService {
-  private readonly logger = new Logger(RedisIdempotentService.name);
+export class RedisIdempotencyService implements IIdempotencyService {
+  private readonly logger = new Logger(RedisIdempotencyService.name);
 
   private getKey(key: string): string {
     return `${IDEMPOTENT_KEY_PREFIX}${key}`;
   }
 
-  constructor(
-    @Inject(REDIS_IDEMPOTENT_CLIENT) private readonly redisClient: Redis,
-  ) {}
+  constructor(@Inject(REDIS_CLIENT) private readonly redisClient: Redis) {}
 
   async checkAndSetProcessing(
     key: string,
