@@ -3,7 +3,7 @@ import { RedisCacheService } from './redis-cache.service';
 
 @Global()
 @Module({
-  imports: [RedisCacheService],
+  providers: [RedisCacheService],
   exports: [RedisCacheService],
 })
 export class CacheModule {}

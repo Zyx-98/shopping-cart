@@ -3,7 +3,7 @@ import { RedisDistributedLockService } from './redis-distributed-lock.service';
 
 @Global()
 @Module({
-  imports: [RedisDistributedLockService],
+  providers: [RedisDistributedLockService],
   exports: [RedisDistributedLockService],
 })
 export class DistributedLockModule {}
