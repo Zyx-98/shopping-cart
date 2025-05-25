@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Scope } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_REPOSITORY } from 'src/core/domain/user/repository/user.repository';
 import { UserRepository } from './repositories/user.repository';
@@ -33,6 +33,8 @@ import { OrderLineSchema } from './entities/order-line.schema';
 import { PersistencePaymentMapper } from './mappers/persistence-payment.mapper';
 import { PAYMENT_REPOSITORY } from 'src/core/domain/payment/repository/payment.repository';
 import { PaymentRepository } from './repositories/payment.repository';
+import { UNIT_OF_WORK } from 'src/core/domain/port/unit-of-work.interface';
+import { TypeOrmUnitOfWork } from './unit-of-work/typeorm.unit-of-work';
 
 @Module({
   imports: [
@@ -87,6 +89,11 @@ import { PaymentRepository } from './repositories/payment.repository';
       provide: PAYMENT_REPOSITORY,
       useClass: PaymentRepository,
     },
+    {
+      provide: UNIT_OF_WORK,
+      useClass: TypeOrmUnitOfWork,
+      scope: Scope.REQUEST,
+    },
   ],
   exports: [
     USER_REPOSITORY,
@@ -96,6 +103,7 @@ import { PaymentRepository } from './repositories/payment.repository';
     INVENTORY_REPOSITORY,
     ORDER_REPOSITORY,
     PAYMENT_REPOSITORY,
+    UNIT_OF_WORK,
     TypeormQueryBuilderModule,
   ],
 })

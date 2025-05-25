@@ -5,15 +5,12 @@ import { PersistenceCustomerMapper } from '../mappers/persistence-customer.mappe
 import { InjectRepository } from '@nestjs/typeorm';
 import { CustomerSchema } from '../entities/customer.schema';
 import { Repository } from 'typeorm';
-import { UserSchema } from '../entities/user.schema';
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
 
 export class CustomerRepository implements ICustomerRepository {
   constructor(
     @InjectRepository(CustomerSchema)
     private readonly customerRepository: Repository<CustomerSchema>,
-    @InjectRepository(UserSchema)
-    private readonly userRepository: Repository<UserSchema>,
     private readonly mapper: PersistenceCustomerMapper,
   ) {}
   findAll(): Promise<CustomerAggregate[]> {

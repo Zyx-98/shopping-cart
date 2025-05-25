@@ -8,19 +8,11 @@ import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo
 import { Price } from 'src/core/domain/shared/domain/value-object/price.vo';
 import { CartAggregate } from 'src/core/domain/cart/aggregate/cart.aggregate';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
-import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerSchema } from '../entities/customer.schema';
-import { DeepPartial, Repository } from 'typeorm';
-import { ProductSchema } from '../entities/product.schema';
+import { DeepPartial } from 'typeorm';
 
 @Injectable()
 export class PersistenceCartMapper {
-  constructor(
-    @InjectRepository(CustomerSchema)
-    private readonly customerRepository: Repository<CustomerSchema>,
-    @InjectRepository(ProductSchema)
-    private readonly productRepository: Repository<ProductSchema>,
-  ) {}
+  constructor() {}
 
   toDomain(schema: CartSchema): CartAggregate {
     const cartItems = schema.cartItems.map((cartItem) =>
