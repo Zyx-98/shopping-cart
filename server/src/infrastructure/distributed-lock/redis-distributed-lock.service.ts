@@ -4,9 +4,15 @@ import Redis from 'ioredis';
 import { v4 } from 'uuid';
 import { REDIS_CLIENT } from '../redis/redis.constant';
 
+const DISTRIBUTED_LOCK_KEY_PREFIX = 'lock:';
 @Injectable()
 export class RedisDistributedLockService implements IDistributedLockService {
   constructor(@Inject(REDIS_CLIENT) private readonly redisClient: Redis) {}
+
+  private getKey(lockName: string) {
+    return `${DISTRIBUTED_LOCK_KEY_PREFIX}${lockName}`;
+  }
+
   async acquire(
     lockName: string,
     lockTimeoutMs: number,
@@ -14,7 +20,7 @@ export class RedisDistributedLockService implements IDistributedLockService {
     retryDelayMs: number = 100,
   ): Promise<string | null> {
     const lockId = v4();
-    const key = `lock:${lockName}`;
+    const key = this.getKey(lockName);
 
     for (let i = 0; i <= retryAttempts; i++) {
       const result = await this.redisClient.set(
@@ -37,7 +43,7 @@ export class RedisDistributedLockService implements IDistributedLockService {
     return null;
   }
   async release(lockName: string, lockId: string): Promise<boolean> {
-    const key = `lock:${lockName}`;
+    const key = this.getKey(lockName);
 
     const script = `
         if redis.call("GET", KEYS[1]) == ARGV[1] then
