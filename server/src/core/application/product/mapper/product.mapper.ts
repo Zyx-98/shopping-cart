@@ -7,7 +7,7 @@ export class ProductMapper {
 
     dto.id = aggregate.id.toValue();
     dto.name = aggregate.name;
-    dto.price = aggregate.itemPrice.toString();
+    dto.price = aggregate.price.toString();
 
     return dto;
   }

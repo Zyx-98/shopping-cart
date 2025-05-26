@@ -8,7 +8,7 @@ export class PersistenceProductMapper {
     return ProductAggregate.reconstitute({
       id: ProductId.create(schema.uuid),
       name: schema.name,
-      price: Price.create(schema.itemPrice),
+      price: Price.create(schema.price),
     });
   }
 }

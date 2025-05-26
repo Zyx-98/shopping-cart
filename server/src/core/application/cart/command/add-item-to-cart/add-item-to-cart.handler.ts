@@ -38,7 +38,7 @@ export class AddItemToCartHandler
       cart = CartAggregate.initializeCart(customerId);
     }
 
-    cart.addCartItem(productId, quantity, product.itemPrice);
+    cart.addCartItem(productId, quantity, product.price);
 
     await this.cartRepository.persist(cart);
   }

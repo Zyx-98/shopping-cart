@@ -9,6 +9,7 @@ export class CreateOrderLinesTable1743329155857 implements MigrationInterface {
             product_id UUID NOT NULL,
             description text NOT NULL,
             quantity INT NOT NULL DEFAULT 1,
+            price_at_time_of_order NUMERIC(10, 2) NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
         );

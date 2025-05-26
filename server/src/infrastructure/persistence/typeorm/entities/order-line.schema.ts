@@ -21,6 +21,9 @@ export class OrderLineSchema {
   @Column({ name: 'quantity', type: 'int' })
   quantity: number;
 
+  @Column({ name: 'price_at_time_of_order', type: 'numeric' })
+  priceAtTimeOfOrder: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 

@@ -24,8 +24,9 @@ export interface OrderProps {
   updatedAt: Date;
 }
 
-export type SelectedProducts = Array<
-  Omit<OrderLineProps, 'id' | 'orderId' | 'createdAt' | 'updatedAt'>
+export type SelectedProduct = Omit<
+  OrderLineProps,
+  'id' | 'orderId' | 'createdAt' | 'updatedAt'
 >;
 
 export class OrderAggregate extends BaseAggregateRoot<OrderId> {
@@ -54,7 +55,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
 
   public static create(
     customerId: CustomerId,
-    orderLinesData: SelectedProducts,
+    orderLinesData: SelectedProduct[],
     couponId?: CouponId | null,
   ): OrderAggregate {
     const orderId = OrderId.create();
@@ -69,7 +70,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
         lineData.productId,
         lineData.productId.toString(),
         lineData.quantity.value,
-        lineData.itemPrice?.amount || 0,
+        lineData.priceAtTimeOfOrder.amount,
       ),
     );
 
@@ -180,7 +181,7 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
 
   public getTotalPrice(): Price {
     return this._orderLines.reduce((total, line) => {
-      return total.add(line.itemPrice || Price.create(0));
+      return total.add(line.priceAtTimeOfOrder || Price.create(0));
     }, Price.create(0));
   }
 }

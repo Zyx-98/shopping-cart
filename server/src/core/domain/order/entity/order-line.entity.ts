@@ -12,7 +12,7 @@ export interface OrderLineProps {
   description?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
-  itemPrice?: Price;
+  priceAtTimeOfOrder: Price;
 }
 
 export class OrderLine {
@@ -23,7 +23,7 @@ export class OrderLine {
   private _description?: string | null;
   private _createdAt?: Date;
   private _updatedAt?: Date;
-  private _itemPrice?: Price;
+  private _priceAtTimeOfOrder: Price;
 
   constructor(props: OrderLineProps) {
     this._id = props.id;
@@ -33,7 +33,7 @@ export class OrderLine {
     this._description = props.description;
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
-    this._itemPrice = props.itemPrice;
+    this._priceAtTimeOfOrder = props.priceAtTimeOfOrder;
   }
 
   get id(): OrderLineId {
@@ -64,8 +64,8 @@ export class OrderLine {
     return this._updatedAt;
   }
 
-  get itemPrice(): Price | null | undefined {
-    return this._itemPrice;
+  get priceAtTimeOfOrder(): Price | null | undefined {
+    return this._priceAtTimeOfOrder;
   }
 
   public static create(
@@ -73,7 +73,7 @@ export class OrderLine {
     productId: ProductId,
     description: string,
     quantity: number,
-    itemPrice: number,
+    priceAtTimeOfOrder: number,
   ): OrderLine {
     return new OrderLine({
       id: OrderLineId.create(),
@@ -81,7 +81,7 @@ export class OrderLine {
       productId,
       description,
       quantity: Quantity.create(quantity),
-      itemPrice: Price.create(itemPrice),
+      priceAtTimeOfOrder: Price.create(priceAtTimeOfOrder),
     });
   }
 

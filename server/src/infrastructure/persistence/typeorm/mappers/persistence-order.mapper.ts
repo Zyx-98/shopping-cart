@@ -8,6 +8,7 @@ import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 import { OrderStateMapper } from 'src/core/domain/order/mapper/order-state.mapper';
 import { DeepPartial } from 'typeorm';
+import { Price } from 'src/core/domain/shared/domain/value-object/price.vo';
 
 export class PersistenceOrderMapper {
   toDomain(schema: OrderSchema): OrderAggregate {
@@ -20,6 +21,7 @@ export class PersistenceOrderMapper {
           orderId: OrderId.create(schema.uuid),
           productId: ProductId.create(orderLine.productId),
           quantity: Quantity.create(orderLine.quantity),
+          priceAtTimeOfOrder: Price.create(orderLine.priceAtTimeOfOrder),
           createdAt: orderLine.createdAt,
           updatedAt: orderLine.updatedAt,
           description: orderLine.description,
@@ -40,6 +42,7 @@ export class PersistenceOrderMapper {
         orderId: aggregate.id.toValue(),
         productId: orderLine.productId.toValue(),
         quantity: orderLine.quantity.value,
+        priceAtTimeOfOrder: orderLine.priceAtTimeOfOrder?.amount,
         description: orderLine.description,
       })),
       state: aggregate.state,

@@ -20,21 +20,25 @@ export class OrderMapper {
     orderDetailDto.createdAt = orderAggregate.createdAt;
 
     orderDetailDto.orderLines = orderAggregate.orderLines.map((orderLine) => {
-      const product = productAggregates.find((product) =>
-        product.id.equals(orderLine.productId),
+      const product = productAggregates.find(
+        (p) => p.id.toString() === orderLine.productId.toString(),
       );
+
+      if (!product) {
+        throw new Error(
+          `Product with ID ${orderLine.productId.toString()} not found`,
+        );
+      }
 
       return {
         id: orderLine.id.toString(),
         description: orderLine.description,
         quantity: orderLine.quantity.value,
-        product: product
-          ? {
-              id: product.id.toString(),
-              name: product.name,
-              price: product.itemPrice.amount,
-            }
-          : null,
+        priceAtTimeOfOrder: orderLine.priceAtTimeOfOrder?.toString() || '0',
+        productDetail: {
+          id: product.id.toString(),
+          name: product.name,
+        },
       };
     });
 

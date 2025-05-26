@@ -12,14 +12,14 @@ export interface ProductProps {
 
 export class ProductAggregate extends BaseAggregateRoot<ProductId> {
   private _name: string;
-  private _itemPrice: Price;
+  private _price: Price;
   private _createdAt?: Date | null;
   private _updatedAt?: Date | null;
 
   constructor(props: ProductProps) {
     super(props.id);
     this._name = props.name;
-    this._itemPrice = props.price;
+    this._price = props.price;
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
@@ -40,8 +40,8 @@ export class ProductAggregate extends BaseAggregateRoot<ProductId> {
     return this._name;
   }
 
-  get itemPrice(): Price {
-    return this._itemPrice;
+  get price(): Price {
+    return this._price;
   }
 
   get createdAt(): Date | null | undefined {

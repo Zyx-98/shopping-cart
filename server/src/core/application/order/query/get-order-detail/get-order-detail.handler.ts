@@ -5,12 +5,12 @@ import {
   IOrderRepository,
   ORDER_REPOSITORY,
 } from 'src/core/domain/order/repository/order.repository';
+import { OrderMapper } from '../../mapper/order.mapper';
+import { OrderDetailDto } from '../../dto/order-detail.dto';
 import {
   IProductRepository,
   PRODUCT_REPOSITORY,
 } from 'src/core/domain/product/repository/product.repository';
-import { OrderMapper } from '../../mapper/order.mapper';
-import { OrderDetailDto } from '../../dto/order-detail.dto';
 
 @QueryHandler(GetOrderDetailQuery)
 export class GetOrderDetailHandler
@@ -39,7 +39,7 @@ export class GetOrderDetailHandler
     }
 
     const products = await this.productRepository.findAllByIds(
-      order.orderLines.map((orderline) => orderline.productId),
+      order.orderLines.map((p) => p.productId),
     );
 
     return this.orderMapper.toDto(order, products);

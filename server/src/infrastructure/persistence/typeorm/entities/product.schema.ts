@@ -18,8 +18,8 @@ export class ProductSchema {
   @Column({ type: 'varchar' })
   name: string;
 
-  @Column({ type: 'numeric', name: 'item_price' })
-  itemPrice: number;
+  @Column({ type: 'numeric', name: 'price' })
+  price: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;

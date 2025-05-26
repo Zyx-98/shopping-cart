@@ -18,7 +18,7 @@ export class ProductFactory extends Factory<ProductSchema> {
     return {
       uuid: randomUUID(),
       name: faker.commerce.productName(),
-      itemPrice: faker.number.int({ min: 1000, max: 800000 }),
+      price: faker.number.int({ min: 1000, max: 800000 }),
       inventory: new LazyInstanceAttribute(
         (instance) =>
           new SingleSubfactory(InventoryFactory, { product: instance }),
