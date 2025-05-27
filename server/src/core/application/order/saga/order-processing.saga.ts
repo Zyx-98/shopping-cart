@@ -14,6 +14,7 @@ import { MakePaymentForCreatedOrderCommand } from '../../payment/command/make-pa
 import { CancelOrderCommand } from '../command/cancel-order/cancel-order.command';
 import { PaymentPaidEvent } from 'src/core/domain/payment/event/payment-paid.event';
 import { MarkOrderAsCompleteCommand } from '../command/mark-order-as-complete/mark-order-as-complete.command';
+import { CancelPaymentForCanceledOrderCommand } from '../../payment/command/cancel-payment-for-canceled-order/cancel-payment-for-canceled-order.command';
 
 @Injectable()
 export class OrderProcessingSaga {
@@ -52,8 +53,13 @@ export class OrderProcessingSaga {
   orderCanceled = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(OrderCanceledEvent),
-      map((event) => {
-        return new RestoreInventoryCommand(event.orderLines);
+      mergeMap((event) => {
+        return [
+          new RestoreInventoryCommand(event.orderLines),
+          ...(event.paymentId
+            ? [new CancelPaymentForCanceledOrderCommand(event.orderId)]
+            : []),
+        ];
       }),
     );
   };

@@ -5,12 +5,18 @@ import {
   IOrderRepository,
   ORDER_REPOSITORY,
 } from 'src/core/domain/order/repository/order.repository';
+import {
+  IPaymentRepository,
+  PAYMENT_REPOSITORY,
+} from 'src/core/domain/payment/repository/payment.repository';
 
 @CommandHandler(CancelOrderCommand)
 export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
   constructor(
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: IOrderRepository,
+    @Inject(PAYMENT_REPOSITORY)
+    private readonly paymentRepository: IPaymentRepository,
     private readonly publisher: EventPublisher,
   ) {}
 
@@ -25,7 +31,9 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
       );
     }
 
-    order.cancelOrder();
+    const payment = await this.paymentRepository.findByOrderId(orderId);
+
+    order.cancelOrder(payment?.id);
 
     this.publisher.mergeObjectContext(order);
 

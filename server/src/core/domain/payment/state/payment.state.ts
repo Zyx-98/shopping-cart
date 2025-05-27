@@ -6,4 +6,5 @@ export interface IPaymentState {
   open(payment: PaymentAggregate): void;
   pay(payment: PaymentAggregate): void;
   fail(payment: PaymentAggregate): void;
+  cancel(payment: PaymentAggregate): void;
 }

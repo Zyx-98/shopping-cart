@@ -1,9 +1,9 @@
 import { PaymentId } from '../value-object/payment-id.vo';
 import { Price } from '../../shared/domain/value-object/price.vo';
-import { IPaymentState } from '../state/payment-state.state';
+import { IPaymentState } from '../state/payment.state';
 import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 import { OrderId } from '../../order/value-object/order-id.vo';
-import { OpenPaymentState } from '../state/open-payment-state.state';
+import { OpenPaymentState } from '../state/open-payment.state';
 import { PaymentFailedEvent } from '../event/payment-failed.event';
 import { PaymentPaidEvent } from '../event/payment-paid.event';
 
@@ -90,5 +90,9 @@ export class PaymentAggregate extends BaseAggregateRoot<PaymentId> {
   public markAsFailed(): void {
     this._state.fail(this);
     this.apply(new PaymentFailedEvent(this.id, this.orderId));
+  }
+
+  public cancel(): void {
+    this._state.cancel(this);
   }
 }

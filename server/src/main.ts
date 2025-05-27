@@ -9,6 +9,7 @@ import {
 } from '@nestjs/platform-fastify';
 import * as qs from 'qs';
 import { join } from 'path';
+import { IdempotencyInterceptor } from './infrastructure/idempotency/itempotency.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -17,6 +18,9 @@ async function bootstrap() {
       querystringParser: (str) => qs.parse(str),
     }),
   );
+
+  const idempotencyInterceptor = app.get(IdempotencyInterceptor);
+  app.useGlobalInterceptors(idempotencyInterceptor);
 
   app.useStaticAssets({
     root: join(__dirname, '..', 'public'),

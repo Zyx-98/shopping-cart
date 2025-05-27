@@ -22,10 +22,10 @@ export class ProductRepository implements IProductRepository {
     private readonly mapper: PersistenceProductMapper,
     private readonly queryBuilderService: TypeOrmQueryBuilderService,
   ) {}
-  async findAllByIds(ProductIds: ProductId[]): Promise<ProductAggregate[]> {
+  async findAllByIds(productIds: ProductId[]): Promise<ProductAggregate[]> {
     const schemas = await this.ormRepository.find({
       where: {
-        uuid: In(ProductIds.map((productId) => productId.toString())),
+        uuid: In(productIds.map((productId) => productId.toString())),
       },
     });
 

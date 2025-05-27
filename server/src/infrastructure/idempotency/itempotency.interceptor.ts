@@ -24,7 +24,7 @@ import {
 } from './idempotent.decorator';
 import { Response } from 'express';
 
-const IDEMPOTENCY_HEADER = 'Idempotency-Key';
+const IDEMPOTENCY_HEADER = 'idempotency-key';
 const DEFAULT_RETENTION_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 hours
 const DEFAULT_PROCESSING_TIMEOUT_MS = 30 * 1000; // 30 seconds
 

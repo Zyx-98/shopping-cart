@@ -10,6 +10,7 @@ import { OrderState } from '../enum/order-state.enum';
 import { Price } from '../../shared/domain/value-object/price.vo';
 import { OrderCreatedEvent } from '../event/order-created.event';
 import { OrderCanceledEvent } from '../event/order-canceled.event';
+import { PaymentId } from '../../payment/value-object/payment-id.vo';
 
 export interface OrderProps {
   id: OrderId;
@@ -143,10 +144,10 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
     this._updatedAt = new Date();
   }
 
-  public cancelOrder(): void {
+  public cancelOrder(paymentId?: PaymentId): void {
     this._state.cancel(this);
     this._updatedAt = new Date();
-    this.apply(new OrderCanceledEvent(this.id, this.orderLines));
+    this.apply(new OrderCanceledEvent(this.id, this.orderLines, paymentId));
   }
 
   public markAsFail(): void {
