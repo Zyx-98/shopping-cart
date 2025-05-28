@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { MakePaymentForCreatedOrderCommand } from './make-payment-for-created-order.command';
+import { InitiatePaymentCommand } from './initiate-payment.command';
 import {
   IPaymentRepository,
   PAYMENT_REPOSITORY,
@@ -7,16 +7,16 @@ import {
 import { Inject } from '@nestjs/common';
 import { PaymentAggregate } from 'src/core/domain/payment/aggregate/payment.aggregate';
 
-@CommandHandler(MakePaymentForCreatedOrderCommand)
-export class MakePaymentForCreatedOrderHandler
-  implements ICommandHandler<MakePaymentForCreatedOrderCommand>
+@CommandHandler(InitiatePaymentCommand)
+export class InitiatePaymentHandler
+  implements ICommandHandler<InitiatePaymentCommand>
 {
   constructor(
     @Inject(PAYMENT_REPOSITORY)
     private readonly paymentRepository: IPaymentRepository,
   ) {}
 
-  async execute(command: MakePaymentForCreatedOrderCommand): Promise<any> {
+  async execute(command: InitiatePaymentCommand): Promise<any> {
     const { orderId, totalItemPrice } = command;
 
     const payment = PaymentAggregate.create(orderId, totalItemPrice);

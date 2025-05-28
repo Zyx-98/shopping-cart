@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ofType, Saga } from '@nestjs/cqrs';
 import { map, mergeMap, Observable } from 'rxjs';
 import { OrderCreatedEvent } from 'src/core/domain/order/event/order-created.event';
-import { ReserveInventoryForOrderCommand } from '../../inventory/command/remove-inventory/reserve-inventory-for-order.command';
+import { ReserveInventoryForOrderCommand } from '../../inventory/command/reserve-inventory-for-order/reserve-inventory-for-order.command';
 import { MarkOrderFailCommand } from '../command/mark-order-fail/mark-order-fail.command';
-import { InsufficientInventoryOnOrderCreatedEvent } from '../../inventory/event/insufficient-inventory-on-order-created.event';
+import { OrderInventoryReservationFailedEvent } from '../../inventory/event/order-inventory-reservation-failed.event';
 import { MarkOrderAwaitingPaymentCommand } from '../command/mark-order-awaiting-payment/mark-order-awaiting-payment.command';
-import { InventoryReservedForCreatedOrderEvent } from '../../inventory/event/inventory-reserved-for-created-order.event';
-import { RestoreInventoryCommand } from '../../inventory/command/add-inventory/restore-inventory.command';
+import { OrderInventoryReservedEvent } from '../../inventory/event/order-inventory-reserved.event';
+import { CompensateOrderInventoryCommand } from '../../inventory/command/compensate-order-inventory./compensate-order-inventory.command';
 import { OrderCanceledEvent } from 'src/core/domain/order/event/order-canceled.event';
 import { PaymentFailedEvent } from 'src/core/domain/payment/event/payment-failed.event';
-import { MakePaymentForCreatedOrderCommand } from '../../payment/command/make-payment-for-created-order/make-payment-for-created-order.command';
+import { InitiatePaymentCommand } from '../../payment/command/initiate-payment/initiate-payment.command';
 import { CancelOrderCommand } from '../command/cancel-order/cancel-order.command';
 import { PaymentPaidEvent } from 'src/core/domain/payment/event/payment-paid.event';
 import { MarkOrderAsCompleteCommand } from '../command/mark-order-as-complete/mark-order-as-complete.command';
@@ -24,15 +24,17 @@ export class OrderProcessingSaga {
       ofType(OrderCreatedEvent),
       mergeMap((event) => [
         new ReserveInventoryForOrderCommand(event.orderId, event.orderLines),
-        new MakePaymentForCreatedOrderCommand(event.orderId, event.totalAmount),
+        new InitiatePaymentCommand(event.orderId, event.totalAmount),
       ]),
     );
   };
 
   @Saga()
-  insufficientInventory = (events$: Observable<any>): Observable<any> => {
+  handleOrderInventoryReservationFailure = (
+    events$: Observable<any>,
+  ): Observable<any> => {
     return events$.pipe(
-      ofType(InsufficientInventoryOnOrderCreatedEvent),
+      ofType(OrderInventoryReservationFailedEvent),
       map((event) => {
         return new MarkOrderFailCommand(event.orderId);
       }),
@@ -40,9 +42,11 @@ export class OrderProcessingSaga {
   };
 
   @Saga()
-  inventoryCommitted = (events$: Observable<any>): Observable<any> => {
+  handleOrderInventoryReserved = (
+    events$: Observable<any>,
+  ): Observable<any> => {
     return events$.pipe(
-      ofType(InventoryReservedForCreatedOrderEvent),
+      ofType(OrderInventoryReservedEvent),
       map((event) => {
         return new MarkOrderAwaitingPaymentCommand(event.orderId);
       }),
@@ -55,7 +59,7 @@ export class OrderProcessingSaga {
       ofType(OrderCanceledEvent),
       mergeMap((event) => {
         return [
-          new RestoreInventoryCommand(event.orderLines),
+          new CompensateOrderInventoryCommand(event.orderLines),
           ...(event.paymentId
             ? [new CancelPaymentForCanceledOrderCommand(event.orderId)]
             : []),

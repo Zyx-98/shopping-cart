@@ -6,8 +6,8 @@ import {
   INVENTORY_REPOSITORY,
 } from 'src/core/domain/inventory/repository/inventory.repository';
 import { InsufficientInventoryAvailableException } from 'src/core/domain/inventory/exception/insufficient-inventory-available.aggregate';
-import { InsufficientInventoryOnOrderCreatedEvent } from '../../event/insufficient-inventory-on-order-created.event';
-import { InventoryReservedForCreatedOrderEvent } from '../../event/inventory-reserved-for-created-order.event';
+import { OrderInventoryReservationFailedEvent } from '../../event/order-inventory-reservation-failed.event';
+import { OrderInventoryReservedEvent } from '../../event/order-inventory-reserved.event';
 
 @CommandHandler(ReserveInventoryForOrderCommand)
 export class ReserveInventoryForOrderHandler
@@ -37,11 +37,11 @@ export class ReserveInventoryForOrderHandler
       }
 
       await this.inventoryRepository.persistMany(inventories);
-      this.eventBus.publish(new InventoryReservedForCreatedOrderEvent(orderId));
+      this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
     } catch (error) {
       if (error instanceof InsufficientInventoryAvailableException) {
         this.eventBus.publish(
-          new InsufficientInventoryOnOrderCreatedEvent(orderId),
+          new OrderInventoryReservationFailedEvent(orderId),
         );
       }
     }

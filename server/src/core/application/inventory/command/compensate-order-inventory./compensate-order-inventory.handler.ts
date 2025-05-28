@@ -4,18 +4,18 @@ import {
   IInventoryRepository,
   INVENTORY_REPOSITORY,
 } from 'src/core/domain/inventory/repository/inventory.repository';
-import { RestoreInventoryCommand } from './restore-inventory.command';
+import { CompensateOrderInventoryCommand } from './compensate-order-inventory.command';
 
-@CommandHandler(RestoreInventoryCommand)
-export class RestoreInventoryHandler
-  implements ICommandHandler<RestoreInventoryCommand>
+@CommandHandler(CompensateOrderInventoryCommand)
+export class CompensateOrderInventoryHandler
+  implements ICommandHandler<CompensateOrderInventoryCommand>
 {
   constructor(
     @Inject(INVENTORY_REPOSITORY)
     private readonly inventoryRepository: IInventoryRepository,
   ) {}
 
-  async execute(command: RestoreInventoryCommand): Promise<void> {
+  async execute(command: CompensateOrderInventoryCommand): Promise<void> {
     const { products } = command;
 
     const inventories = await this.inventoryRepository.findAllByProductId(
