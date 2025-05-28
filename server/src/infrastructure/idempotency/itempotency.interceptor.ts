@@ -22,7 +22,7 @@ import {
   IDEMPOTENCY_KEY_METADATA,
   IdempotencyOptions,
 } from './idempotent.decorator';
-import { Response } from 'express';
+import { FastifyRequest, FastifyReply } from 'fastify';
 
 const IDEMPOTENCY_HEADER = 'idempotency-key';
 const DEFAULT_RETENTION_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -52,8 +52,8 @@ export class IdempotencyInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest<Request>();
-    const response = context.switchToHttp().getResponse<Response>();
+    const request = context.switchToHttp().getRequest<FastifyRequest>();
+    const response = context.switchToHttp().getResponse<FastifyReply>();
 
     const idempotencyKey = request.headers[IDEMPOTENCY_HEADER] as string;
 
