@@ -1,10 +1,10 @@
 import { OrderState } from '../enum/order-state.enum';
 import { AwaitingPaymentOrderState } from '../state/awaiting-payment-order.state';
-import { CanceledOrderState } from '../state/canceled-order-state.state';
-import { CompletedOrderState } from '../state/completed-order-state.state';
-import { FailedOrderState } from '../state/failed-order-state.state';
+import { CanceledOrderState } from '../state/canceled-order.state';
+import { CompletedOrderState } from '../state/completed-order.state';
+import { FailedOrderState } from '../state/failed-order.state';
 import { IOrderState } from '../state/order.state';
-import { PendingOrderState } from '../state/pending-order-state.state';
+import { PendingOrderState } from '../state/pending-order.state';
 
 export class OrderStateMapper {
   static mapToOrderState(state: string): IOrderState {

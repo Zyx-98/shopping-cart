@@ -2,8 +2,8 @@ import { OrderAggregate } from '../aggregate/order.aggregate';
 import { OrderState } from '../enum/order-state.enum';
 import { OrderStateTransitionException } from '../exception/order-state-transition.exception';
 import { AwaitingPaymentOrderState } from './awaiting-payment-order.state';
-import { CanceledOrderState } from './canceled-order-state.state';
-import { FailedOrderState } from './failed-order-state.state';
+import { CanceledOrderState } from './canceled-order.state';
+import { FailedOrderState } from './failed-order.state';
 import { IOrderState } from './order.state';
 
 export class PendingOrderState implements IOrderState {

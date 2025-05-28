@@ -5,7 +5,7 @@ import { OrderLine, OrderLineProps } from '../entity/order-line.entity';
 import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 import { CustomerId } from '../../customer/value-object/customer-id.vo';
 import { OrderException } from '../exception/order.exception';
-import { PendingOrderState } from '../state/pending-order-state.state';
+import { PendingOrderState } from '../state/pending-order.state';
 import { OrderState } from '../enum/order-state.enum';
 import { Price } from '../../shared/domain/value-object/price.vo';
 import { OrderCreatedEvent } from '../event/order-created.event';
