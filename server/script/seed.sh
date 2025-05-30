@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 seed_directory="src/infrastructure/persistence/seed"
 
