@@ -27,6 +27,11 @@ services:
       - cache
     networks:
       - nestjs_shopping_app
+    deploy:
+      resources:
+        limits:
+          cpus: 2
+          memory: 1G
   db:
     image: postgres:16
     container_name: shopping_app_db
@@ -41,6 +46,11 @@ services:
       - ./init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
     networks:
       - nestjs_shopping_app
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 512M
   cache:
     image: redis:latest
     container_name: shopping_app_cache
@@ -50,7 +60,11 @@ services:
       - cache_data:/data
     networks:
       - nestjs_shopping_app
-
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
 networks:
   nestjs_shopping_app:
 
