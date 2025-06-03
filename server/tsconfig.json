@@ -17,5 +17,10 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "exclude": [
+    "bench/**",
+    "dist",
+    "node_modules"
+  ]
 }

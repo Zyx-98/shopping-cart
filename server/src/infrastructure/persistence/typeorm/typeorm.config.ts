@@ -19,7 +19,8 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
       ),
     ],
     synchronize: false,
-    logging: process.env.NODE_ENV === 'development',
+    logging: false,
+    // logging: process.env.NODE_ENV === 'development',
     autoLoadEntities: true,
   }),
 };
