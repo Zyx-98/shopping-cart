@@ -13,7 +13,10 @@ export class Price {
   public static create(amount: number, currency: string = 'USD'): Price {
     this.validate(amount, currency);
     const normalizedCurrency = currency.trim().toUpperCase();
-    return new Price(amount, normalizedCurrency);
+    return new Price(
+      typeof amount === 'string' ? parseFloat(amount) : amount,
+      normalizedCurrency,
+    );
   }
 
   private static validate(amount: number, currency: string): void {
@@ -66,6 +69,7 @@ export class Price {
         'Cannot add Prices with different currencies',
       );
     }
+
     return Price.create(this.amount + other.amount, this.currency);
   }
 

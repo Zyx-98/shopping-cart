@@ -182,7 +182,10 @@ export class OrderAggregate extends BaseAggregateRoot<OrderId> {
 
   public getTotalPrice(): Price {
     return this._orderLines.reduce((total, line) => {
-      return total.add(line.priceAtTimeOfOrder || Price.create(0));
+      return total.add(
+        line.priceAtTimeOfOrder?.multiply(line.quantity.value) ||
+          Price.create(0),
+      );
     }, Price.create(0));
   }
 }
