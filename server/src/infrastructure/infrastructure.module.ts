@@ -5,6 +5,7 @@ import { CacheModule } from './cache/cache.module';
 import { RedisModule } from './redis/redis.module';
 import { IdempotencyModule } from './idempotency/idempotency.module';
 import { DistributedLockModule } from './distributed-lock/distributed-lock.module';
+import { MetricModule } from './metric/metric.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DistributedLockModule } from './distributed-lock/distributed-lock.modul
     CacheModule,
     IdempotencyModule,
     DistributedLockModule,
+    MetricModule,
   ],
   exports: [
     PersistenceModule,
@@ -21,6 +23,7 @@ import { DistributedLockModule } from './distributed-lock/distributed-lock.modul
     RedisModule,
     CacheModule,
     DistributedLockModule,
+    MetricModule,
   ],
 })
 export class InfrastructureModule {}

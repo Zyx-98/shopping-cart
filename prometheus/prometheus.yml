@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+modules:
+  http_2xx_with_header:
+    prober: http
+    http:
+      headers:
+        x-metric-secret-key: secret
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'nestjs-app'
+    params:
+      module: [http_2xx_with_header]
+    metrics_path: /metrics # Default path, change if your app uses a different one
+    static_configs:
+      - targets: ['server:3000'] # Targets the 'server' service on its port 3000
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres_exporter:9187'] # Default port for postgres_exporter
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121'] # Default port for redis_exporter
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node_exporter:9100']

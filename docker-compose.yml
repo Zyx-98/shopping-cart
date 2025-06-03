@@ -1,0 +1,191 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: development
+    container_name: shopping_app_server
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    ports:
+      - 3000:3000
+    environment:
+      APP_PORT: 3000
+      DB_TYPE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: nestjs
+      DB_PASSWORD: secret
+      DB_NAME: shopping_app
+      JWT_ACCESS_SECRET: secret
+      JWT_ACCESS_EXPIRATION: 12h
+      METRIC_SECRET_KEY: secret
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+    depends_on:
+      - db
+      - cache
+    networks:
+      - nestjs_shopping_app
+    deploy:
+      resources:
+        limits:
+          cpus: 2
+          memory: 1G
+  db:
+    image: postgres:16
+    container_name: shopping_app_db
+    environment:
+      POSTGRES_DB: shopping_app
+      POSTGRES_USER: nestjs
+      POSTGRES_PASSWORD: secret
+      PG_EXPORTER_DATA_SOURCE_NAME: "postgresql://nestjs:secret@db:5432/shopping_app?sslmode=disable"
+    ports:
+      - 5432:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./postgres/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
+    networks:
+      - nestjs_shopping_app
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 512M
+  cache:
+    image: redis:latest
+    container_name: shopping_app_cache
+    ports:
+      - 6379:6379
+    volumes:
+      - cache_data:/data
+    networks:
+      - nestjs_shopping_app
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: shopping_app_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus/ # Mount local prometheus config directory
+      # - prometheus_data:/prometheus # Optional: for persisting Prometheus data
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - nestjs_shopping_app
+    depends_on:
+      - server # Prometheus needs the server to be up to scrape it
+      - postgres_exporter
+      - redis_exporter
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+  grafana:
+    image: grafana/grafana:latest
+    container_name: shopping_app_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000" # Changed Grafana host port to 3001 to avoid conflict if NestJS uses 3000 for metrics
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Change this in production!
+    networks:
+      - nestjs_shopping_app
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 512M
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest # Using v0.15.0 or latest
+    container_name: shopping_app_postgres_exporter
+    restart: unless-stopped
+    environment:
+      # Use the same credentials and database name as your 'db' service
+      DATA_SOURCE_NAME: "postgresql://nestjs:secret@db:5432/shopping_app?sslmode=disable"
+      # PG_EXPORTER_DISABLE_DEFAULT_METRICS: "true" # Uncomment to disable default metrics
+      # PG_EXPORTER_DISABLE_SETTINGS_METRICS: "true" # Uncomment to disable settings metrics
+      # PG_EXPORTER_CONSTANT_LABELS: "db_instance=shopping_app_db"
+    # No ports exposure needed to the host, Prometheus will access it via the internal network
+    networks:
+      - nestjs_shopping_app
+    depends_on:
+      - db
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+
+  redis_exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: shopping_app_redis_exporter
+    restart: unless-stopped
+    environment:
+      # Point to your 'cache' service
+      REDIS_ADDR: "redis://cache:6379"
+      # If your Redis instance had a password, you'd set it here:
+      # REDIS_PASSWORD: your_redis_password
+    # No ports exposure needed to the host
+    networks:
+      - nestjs_shopping_app
+    depends_on:
+      - cache
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: shopping_app_node_exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      # For Docker Desktop on Mac/Windows, you might not need the volume mounts
+      # or specific command flags if it's exposing host metrics differently.
+      # Check node_exporter documentation for Docker Desktop specifics if needed.
+    # ports: # Not strictly needed to expose to host, Prometheus scrapes internally
+    #   - "9100:9100"
+    networks:
+      - nestjs_shopping_app
+    depends_on:
+      - server
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+
+networks:
+  nestjs_shopping_app:
+
+volumes:
+  db_data:
+  cache_data:
+  grafana_data:

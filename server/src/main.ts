@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
   FastifyAdapter,
@@ -10,6 +10,8 @@ import {
 import * as qs from 'qs';
 import { join } from 'path';
 import { IdempotencyInterceptor } from './infrastructure/idempotency/itempotency.interceptor';
+import { MetricService } from './infrastructure/metric/metric.service';
+import { MetricInterceptor } from './infrastructure/metric/metric.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -18,6 +20,16 @@ async function bootstrap() {
       querystringParser: (str) => qs.parse(str),
     }),
   );
+
+  // client.collectDefaultMetrics();
+
+  // app.getHttpAdapter().get('/metrics', async (_request, reply) => {
+  //   reply.header('Content-Type', client.register.contentType);
+  //   reply.send(await client.register.metrics());
+  // });
+
+  const metricService = app.get(MetricService);
+  app.useGlobalInterceptors(new MetricInterceptor(metricService));
 
   const idempotencyInterceptor = app.get(IdempotencyInterceptor);
   app.useGlobalInterceptors(idempotencyInterceptor);
@@ -31,7 +43,9 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'metrics', method: RequestMethod.GET }],
+  });
 
   app.enableVersioning({
     type: VersioningType.URI,
@@ -70,6 +84,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`Metrics is available at: ${await app.getUrl()}/metrics`);
   console.log(
     `Swagger documentation is available at: ${await app.getUrl()}/api-docs`,
   );

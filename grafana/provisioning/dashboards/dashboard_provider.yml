@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'NestJS Application Dashboards' # A descriptive name for your dashboard provider
+    orgId: 1 # The ID of the organization in Grafana (usually 1 for the default)
+    folder: '' # Optional: You can specify a folder name here (e.g., 'My App Dashboards')
+               # If left empty, dashboards will be at the root.
+    type: file # This indicates that Grafana should provision dashboards from files
+    disableDeletion: false # Set to true if you want to prevent deletion from the Grafana UI
+    editable: true # Set to true if you want to modify dashboards in the Grafana UI
+    options:
+      path: /etc/grafana/provisioning/dashboards # <--- This path must match the *container* path where your JSONs are mounted
