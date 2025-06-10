@@ -1,31 +1,50 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { MarkOrderAsCompleteCommand } from './mark-order-as-complete.command';
+import { Inject, NotFoundException } from '@nestjs/common';
 import {
-  IOrderRepository,
-  ORDER_REPOSITORY,
-} from 'src/core/domain/order/repository/order.repository';
-import { Inject } from '@nestjs/common';
+  IUnitOfWork,
+  UNIT_OF_WORK,
+} from 'src/core/domain/port/unit-of-work.interface';
+import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
+import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
 
 @CommandHandler(MarkOrderAsCompleteCommand)
 export class MarkOrderAsCompleteHandler
   implements ICommandHandler<MarkOrderAsCompleteCommand>
 {
   constructor(
-    @Inject(ORDER_REPOSITORY)
-    private readonly orderRepository: IOrderRepository,
+    @Inject(UNIT_OF_WORK)
+    private readonly unitOfWork: IUnitOfWork,
   ) {}
 
   async execute(command: MarkOrderAsCompleteCommand): Promise<void> {
-    const { orderId } = command;
+    await this.unitOfWork.execute(async () => {
+      const { orderRepository, sagaInstanceRepository } = this.unitOfWork;
 
-    const order = await this.orderRepository.findById(orderId);
+      const { orderId } = command;
 
-    if (!order) {
-      throw new Error(`Order with ID ${orderId.toString()} not found`);
-    }
+      const order = await orderRepository.findById(orderId);
 
-    order.completeOrder();
+      if (!order) {
+        throw new Error(`Order with ID ${orderId.toString()} not found`);
+      }
 
-    await this.orderRepository.persist(order);
+      const sagaInstance =
+        await sagaInstanceRepository.findByCorrelationId<SagaType>(orderId);
+
+      if (!sagaInstance) {
+        throw new NotFoundException(
+          `Saga with orderId ${orderId.toValue()} not found`,
+        );
+      }
+
+      order.completeOrder();
+
+      await orderRepository.persist(order);
+
+      sagaInstance.complete(OrderProcessingSagaStep.ORDER_COMPLETED);
+
+      await sagaInstanceRepository.persist(sagaInstance);
+    });
   }
 }

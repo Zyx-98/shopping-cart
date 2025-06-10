@@ -2,43 +2,58 @@ import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CancelOrderCommand } from './cancel-order.command';
 import { Inject, NotFoundException } from '@nestjs/common';
 import {
-  IOrderRepository,
-  ORDER_REPOSITORY,
-} from 'src/core/domain/order/repository/order.repository';
-import {
-  IPaymentRepository,
-  PAYMENT_REPOSITORY,
-} from 'src/core/domain/payment/repository/payment.repository';
+  IUnitOfWork,
+  UNIT_OF_WORK,
+} from 'src/core/domain/port/unit-of-work.interface';
+import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
+import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
 
 @CommandHandler(CancelOrderCommand)
 export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
   constructor(
-    @Inject(ORDER_REPOSITORY)
-    private readonly orderRepository: IOrderRepository,
-    @Inject(PAYMENT_REPOSITORY)
-    private readonly paymentRepository: IPaymentRepository,
+    @Inject(UNIT_OF_WORK)
+    private readonly unitOfWork: IUnitOfWork,
     private readonly publisher: EventPublisher,
   ) {}
 
   async execute(command: CancelOrderCommand): Promise<void> {
-    const { orderId } = command;
+    await this.unitOfWork.execute(async () => {
+      const { orderId } = command;
+      const { orderRepository, sagaInstanceRepository, paymentRepository } =
+        this.unitOfWork;
 
-    const order = await this.orderRepository.findById(orderId);
+      const order = await orderRepository.findById(orderId);
 
-    if (!order) {
-      throw new NotFoundException(
-        `Order with ID ${orderId.toString()} not found`,
-      );
-    }
+      if (!order) {
+        throw new NotFoundException(
+          `Order with ID ${orderId.toString()} not found`,
+        );
+      }
 
-    const payment = await this.paymentRepository.findByOrderId(orderId);
+      const sagaInstance =
+        await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+          orderId,
+        );
 
-    order.cancelOrder(payment?.id);
+      if (!sagaInstance) {
+        throw new NotFoundException(
+          `Saga with orderId ${orderId.toString()} not found`,
+        );
+      }
 
-    this.publisher.mergeObjectContext(order);
+      const payment = await paymentRepository.findByOrderId(orderId);
 
-    await this.orderRepository.persist(order);
+      order.cancelOrder(payment?.id);
 
-    order.commit();
+      this.publisher.mergeObjectContext(order);
+
+      await orderRepository.persist(order);
+
+      sagaInstance.advanceStep(OrderProcessingSagaStep.ORDER_CANCELED);
+
+      await sagaInstanceRepository.persist(sagaInstance);
+
+      order.commit();
+    });
   }
 }

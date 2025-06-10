@@ -1,17 +1,19 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { ReserveInventoryForOrderCommand } from './reserve-inventory-for-order.command';
-import { Inject } from '@nestjs/common';
-import {
-  IInventoryRepository,
-  INVENTORY_REPOSITORY,
-} from 'src/core/domain/inventory/repository/inventory.repository';
-import { InsufficientInventoryAvailableException } from 'src/core/domain/inventory/exception/insufficient-inventory-available.aggregate';
+import { Inject, NotFoundException } from '@nestjs/common';
 import { OrderInventoryReservationFailedEvent } from '../../event/order-inventory-reservation-failed.event';
 import { OrderInventoryReservedEvent } from '../../event/order-inventory-reserved.event';
 import {
   DISTRIBUTED_LOCK_SERVICE,
   IDistributedLockService,
 } from 'src/core/application/port/distributed-lock.interface';
+import {
+  IUnitOfWork,
+  UNIT_OF_WORK,
+} from 'src/core/domain/port/unit-of-work.interface';
+import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
+import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
+import { InsufficientInventoryAvailableException } from 'src/core/domain/inventory/exception/insufficient-inventory-available.aggregate';
 
 @CommandHandler(ReserveInventoryForOrderCommand)
 export class ReserveInventoryForOrderHandler
@@ -22,8 +24,8 @@ export class ReserveInventoryForOrderHandler
   private readonly RETRY_DELAY_MS = 200;
 
   constructor(
-    @Inject(INVENTORY_REPOSITORY)
-    private readonly inventoryRepository: IInventoryRepository,
+    @Inject(UNIT_OF_WORK)
+    private readonly unitOfWork: IUnitOfWork,
     @Inject(DISTRIBUTED_LOCK_SERVICE)
     private readonly distributedLockService: IDistributedLockService,
     private readonly eventBus: EventBus,
@@ -32,9 +34,23 @@ export class ReserveInventoryForOrderHandler
   async execute(command: ReserveInventoryForOrderCommand): Promise<void> {
     const { orderId, orderLines } = command;
     const acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
+    await this.unitOfWork.beginTransaction();
+
+    const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
+
+    const sagaInstance =
+      await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+        orderId,
+      );
+
+    if (!sagaInstance) {
+      throw new NotFoundException(
+        `Cannot reserve inventory: No saga instance found for orderId: ${orderId.toValue()} `,
+      );
+    }
 
     try {
-      const inventories = await this.inventoryRepository.findAllByProductId(
+      const inventories = await inventoryRepository.findAllByProductId(
         orderLines.map((line) => line.productId),
       );
 
@@ -56,6 +72,12 @@ export class ReserveInventoryForOrderHandler
             );
           }
 
+          sagaInstance.advanceStep(
+            OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,
+          );
+
+          await sagaInstanceRepository.persist(sagaInstance);
+
           this.eventBus.publish(
             new OrderInventoryReservationFailedEvent(orderId),
           );
@@ -76,13 +98,27 @@ export class ReserveInventoryForOrderHandler
         }
       }
 
-      await this.inventoryRepository.persistMany(inventories);
+      await inventoryRepository.persistMany(inventories);
+
+      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_RESERVED);
+
+      await sagaInstanceRepository.persist(sagaInstance);
+
+      await this.unitOfWork.commitTransaction();
       this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
     } catch (error) {
       if (error instanceof InsufficientInventoryAvailableException) {
+        sagaInstance.advanceStep(
+          OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,
+        );
+        await sagaInstanceRepository.persist(sagaInstance);
         this.eventBus.publish(
           new OrderInventoryReservationFailedEvent(orderId),
         );
+
+        await this.unitOfWork.commitTransaction();
+      } else {
+        await this.unitOfWork.rollbackTransaction();
       }
     }
   }

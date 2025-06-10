@@ -2,32 +2,52 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { MarkOrderFailCommand } from './mark-order-fail.command';
 import { Inject, NotFoundException } from '@nestjs/common';
 import {
-  IOrderRepository,
-  ORDER_REPOSITORY,
-} from 'src/core/domain/order/repository/order.repository';
+  IUnitOfWork,
+  UNIT_OF_WORK,
+} from 'src/core/domain/port/unit-of-work.interface';
+import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
+import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
 
 @CommandHandler(MarkOrderFailCommand)
 export class MarkOrderFailHandler
   implements ICommandHandler<MarkOrderFailCommand>
 {
   constructor(
-    @Inject(ORDER_REPOSITORY)
-    private readonly orderRepository: IOrderRepository,
+    @Inject(UNIT_OF_WORK)
+    private readonly unitOfWork: IUnitOfWork,
   ) {}
 
   async execute(command: MarkOrderFailCommand): Promise<void> {
     const { orderId } = command;
 
-    const order = await this.orderRepository.findById(orderId);
+    await this.unitOfWork.execute(async () => {
+      const { orderRepository, sagaInstanceRepository } = this.unitOfWork;
+      const order = await orderRepository.findById(orderId);
 
-    if (!order) {
-      throw new NotFoundException(
-        `Order with ID ${orderId.toString()} not found`,
-      );
-    }
+      if (!order) {
+        throw new NotFoundException(
+          `Order with ID ${orderId.toString()} not found`,
+        );
+      }
 
-    order.markAsFail();
+      const sagaInstance =
+        await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+          orderId,
+        );
 
-    await this.orderRepository.persist(order);
+      if (!sagaInstance) {
+        throw new NotFoundException(
+          `Saga not found with orderId: ${orderId.toValue()}`,
+        );
+      }
+
+      order.markAsFail();
+
+      await orderRepository.persist(order);
+
+      sagaInstance.fail(`Order failed`, OrderProcessingSagaStep.ORDER_FAILED);
+
+      await sagaInstanceRepository.persist(sagaInstance);
+    });
   }
 }

@@ -1,36 +1,55 @@
-import { Inject } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import {
-  IInventoryRepository,
-  INVENTORY_REPOSITORY,
-} from 'src/core/domain/inventory/repository/inventory.repository';
 import { CompensateOrderInventoryCommand } from './compensate-order-inventory.command';
+import {
+  IUnitOfWork,
+  UNIT_OF_WORK,
+} from 'src/core/domain/port/unit-of-work.interface';
+import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
+import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
 
 @CommandHandler(CompensateOrderInventoryCommand)
 export class CompensateOrderInventoryHandler
   implements ICommandHandler<CompensateOrderInventoryCommand>
 {
   constructor(
-    @Inject(INVENTORY_REPOSITORY)
-    private readonly inventoryRepository: IInventoryRepository,
+    @Inject(UNIT_OF_WORK)
+    private readonly unitOfWork: IUnitOfWork,
   ) {}
 
   async execute(command: CompensateOrderInventoryCommand): Promise<void> {
-    const { products } = command;
+    const { orderId, products } = command;
 
-    const inventories = await this.inventoryRepository.findAllByProductId(
-      products.map((product) => product.productId),
-    );
+    // TODO need to implement a distributed lock to ensure inventory updates are safe and consistent in concurrent scenarios.
+    await this.unitOfWork.execute(async () => {
+      const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
 
-    for (const inventory of inventories) {
-      const product = products.find((product) =>
-        product.productId.equals(inventory.productId),
+      const inventories = await inventoryRepository.findAllByProductId(
+        products.map((product) => product.productId),
       );
-      if (product) {
-        inventory.addQuantity(product.quantity);
-      }
-    }
+      const sagaInstance =
+        await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+          orderId,
+        );
 
-    await this.inventoryRepository.persistMany(inventories);
+      if (!sagaInstance) {
+        throw new NotFoundException(
+          `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
+        );
+      }
+
+      for (const inventory of inventories) {
+        const product = products.find((product) =>
+          product.productId.equals(inventory.productId),
+        );
+        if (product) {
+          inventory.addQuantity(product.quantity);
+        }
+      }
+
+      await inventoryRepository.persistMany(inventories);
+      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
+      await sagaInstanceRepository.persist(sagaInstance);
+    });
   }
 }
