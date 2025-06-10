@@ -35,6 +35,10 @@ import { PAYMENT_REPOSITORY } from 'src/core/domain/payment/repository/payment.r
 import { PaymentRepository } from './repositories/payment.repository';
 import { UNIT_OF_WORK } from 'src/core/domain/port/unit-of-work.interface';
 import { TypeOrmUnitOfWork } from './unit-of-work/typeorm.unit-of-work';
+import { SagaInstanceSchema } from './entities/saga-instance.schema';
+import { PersistenceSagaInstanceMapper } from './mappers/persistence-saga-instance.mapper';
+import { SAGA_INSTANCE_REPOSITORY } from 'src/core/domain/saga/repository/saga-instance.repository';
+import { SagaInstanceRepository } from './repositories/saga-instance.repository';
 
 @Module({
   imports: [
@@ -49,6 +53,7 @@ import { TypeOrmUnitOfWork } from './unit-of-work/typeorm.unit-of-work';
       CouponSchema,
       OrderSchema,
       OrderLineSchema,
+      SagaInstanceSchema,
     ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     TypeormQueryBuilderModule,
@@ -61,6 +66,7 @@ import { TypeOrmUnitOfWork } from './unit-of-work/typeorm.unit-of-work';
     PersistenceInventoryMapper,
     PersistenceOrderMapper,
     PersistencePaymentMapper,
+    PersistenceSagaInstanceMapper,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
@@ -90,6 +96,10 @@ import { TypeOrmUnitOfWork } from './unit-of-work/typeorm.unit-of-work';
       useClass: PaymentRepository,
     },
     {
+      provide: SAGA_INSTANCE_REPOSITORY,
+      useClass: SagaInstanceRepository,
+    },
+    {
       provide: UNIT_OF_WORK,
       useClass: TypeOrmUnitOfWork,
       scope: Scope.REQUEST,
@@ -103,6 +113,7 @@ import { TypeOrmUnitOfWork } from './unit-of-work/typeorm.unit-of-work';
     INVENTORY_REPOSITORY,
     ORDER_REPOSITORY,
     PAYMENT_REPOSITORY,
+    SAGA_INSTANCE_REPOSITORY,
     UNIT_OF_WORK,
     TypeormQueryBuilderModule,
   ],

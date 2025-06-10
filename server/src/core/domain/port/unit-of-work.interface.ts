@@ -5,6 +5,7 @@ import { IInventoryRepository } from '../inventory/repository/inventory.reposito
 import { IOrderRepository } from '../order/repository/order.repository';
 import { IPaymentRepository } from '../payment/repository/payment.repository';
 import { IProductRepository } from '../product/repository/product.repository';
+import { ISagaInstanceRepository } from '../saga/repository/saga-instance.repository';
 import { IUserRepository } from '../user/repository/user.repository';
 
 export interface IUnitOfWork {
@@ -16,6 +17,7 @@ export interface IUnitOfWork {
   orderRepository: IOrderRepository;
   inventoryRepository: IInventoryRepository;
   paymentRepository: IPaymentRepository;
+  sagaInstanceRepository: ISagaInstanceRepository;
 
   beginTransaction(): Promise<void>;
   commitTransaction(): Promise<void>;

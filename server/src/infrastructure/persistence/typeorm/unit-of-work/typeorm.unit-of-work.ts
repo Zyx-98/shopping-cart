@@ -32,65 +32,143 @@ import { PersistenceInventoryMapper } from '../mappers/persistence-inventory.map
 import { PaymentRepository } from '../repositories/payment.repository';
 import { PaymentSchema } from '../entities/payment.schema';
 import { PersistencePaymentMapper } from '../mappers/persistence-payment.mapper';
+import { ISagaInstanceRepository } from 'src/core/domain/saga/repository/saga-instance.repository';
+import { SagaInstanceRepository } from '../repositories/saga-instance.repository';
+import { SagaInstanceSchema } from '../entities/saga-instance.schema';
+import { PersistenceSagaInstanceMapper } from '../mappers/persistence-saga-instance.mapper';
 
 @Injectable()
 export class TypeOrmUnitOfWork implements IUnitOfWork {
   private entityManager: EntityManager | null = null;
   private queryRunnerInitialized = false;
 
-  public userRepository: IUserRepository;
-  public customerRepository: ICustomerRepository;
-  public cartRepository: ICartRepository;
-  public couponRepository: ICouponRepository;
-  public productRepository: IProductRepository;
-  public orderRepository: IOrderRepository;
-  public inventoryRepository: IInventoryRepository;
-  public paymentRepository: IPaymentRepository;
+  // Private fields to hold repository instances after they are initialized
+  private _userRepository: IUserRepository | null = null;
+  private _customerRepository: ICustomerRepository | null = null;
+  private _cartRepository: ICartRepository | null = null;
+  private _couponRepository: ICouponRepository | null = null;
+  private _productRepository: IProductRepository | null = null;
+  private _orderRepository: IOrderRepository | null = null;
+  private _inventoryRepository: IInventoryRepository | null = null;
+  private _paymentRepository: IPaymentRepository | null = null;
+  private _sagaInstanceRepository: ISagaInstanceRepository | null = null;
 
   constructor(private readonly dataSource: DataSource) {}
 
   private getManager(): EntityManager {
     if (!this.entityManager) {
       throw new Error(
-        `Transaction not started. Call beginTransaction() first.`,
+        `Transaction not started. Call beginTransaction() first, or use execute().`,
       );
     }
-
     return this.entityManager;
   }
 
-  private initializeRepositories(manager: EntityManager): void {
-    this.userRepository = new UserRepository(
-      manager.getRepository(UserSchema),
-      new PersistenceUserMapper(),
-    );
-    this.customerRepository = new CustomerRepository(
-      manager.getRepository(CustomerSchema),
-      new PersistenceCustomerMapper(),
-    );
-    this.cartRepository = new CartRepository(
-      manager.getRepository(CartSchema),
-      manager.getRepository(CartItemSchema),
-      new PersistenceCartMapper(),
-    );
-    // TODO initialize coupon repository
-    this.productRepository = new ProductRepository(
-      manager.getRepository(ProductSchema),
-      new PersistenceProductMapper(),
-      new TypeOrmQueryBuilderService(),
-    );
-    this.orderRepository = new OrderRepository(
-      manager.getRepository(OrderSchema),
-      new PersistenceOrderMapper(),
-    );
-    this.inventoryRepository = new InventoryRepository(
-      manager.getRepository(InventorySchema),
-      new PersistenceInventoryMapper(),
-    );
-    this.paymentRepository = new PaymentRepository(
-      manager.getRepository(PaymentSchema),
-      new PersistencePaymentMapper(),
-    );
+  // Use getters for lazy initialization
+  public get userRepository(): IUserRepository {
+    if (!this._userRepository) {
+      this._userRepository = new UserRepository(
+        this.getManager().getRepository(UserSchema),
+        new PersistenceUserMapper(),
+      );
+    }
+    return this._userRepository;
+  }
+
+  public get customerRepository(): ICustomerRepository {
+    if (!this._customerRepository) {
+      this._customerRepository = new CustomerRepository(
+        this.getManager().getRepository(CustomerSchema),
+        new PersistenceCustomerMapper(),
+      );
+    }
+    return this._customerRepository;
+  }
+
+  public get cartRepository(): ICartRepository {
+    if (!this._cartRepository) {
+      this._cartRepository = new CartRepository(
+        this.getManager().getRepository(CartSchema),
+        this.getManager().getRepository(CartItemSchema),
+        new PersistenceCartMapper(),
+      );
+    }
+    return this._cartRepository;
+  }
+
+  public get couponRepository(): ICouponRepository {
+    if (!this._couponRepository) {
+      // TODO: Implement CouponRepository initialization when ready
+      // this._couponRepository = new CouponRepository(
+      //   this.getManager().getRepository(CouponSchema),
+      //   new PersistenceCouponMapper(),
+      // );
+      throw new Error('CouponRepository not yet implemented.');
+    }
+    return this._couponRepository;
+  }
+
+  public get productRepository(): IProductRepository {
+    if (!this._productRepository) {
+      this._productRepository = new ProductRepository(
+        this.getManager().getRepository(ProductSchema),
+        new PersistenceProductMapper(),
+        new TypeOrmQueryBuilderService(),
+      );
+    }
+    return this._productRepository;
+  }
+
+  public get orderRepository(): IOrderRepository {
+    if (!this._orderRepository) {
+      this._orderRepository = new OrderRepository(
+        this.getManager().getRepository(OrderSchema),
+        new PersistenceOrderMapper(),
+      );
+    }
+    return this._orderRepository;
+  }
+
+  public get inventoryRepository(): IInventoryRepository {
+    if (!this._inventoryRepository) {
+      this._inventoryRepository = new InventoryRepository(
+        this.getManager().getRepository(InventorySchema),
+        new PersistenceInventoryMapper(),
+      );
+    }
+    return this._inventoryRepository;
+  }
+
+  public get paymentRepository(): IPaymentRepository {
+    if (!this._paymentRepository) {
+      this._paymentRepository = new PaymentRepository(
+        this.getManager().getRepository(PaymentSchema),
+        new PersistencePaymentMapper(),
+      );
+    }
+    return this._paymentRepository;
+  }
+
+  public get sagaInstanceRepository(): ISagaInstanceRepository {
+    if (!this._sagaInstanceRepository) {
+      this._sagaInstanceRepository = new SagaInstanceRepository(
+        this.getManager().getRepository(SagaInstanceSchema),
+        new PersistenceSagaInstanceMapper(),
+      );
+    }
+    return this._sagaInstanceRepository;
+  }
+
+  private resetRepositories(): void {
+    this._userRepository = null;
+    this._customerRepository = null;
+    this._cartRepository = null;
+    this._couponRepository = null;
+    this._productRepository = null;
+    this._orderRepository = null;
+    this._inventoryRepository = null;
+    this._paymentRepository = null;
+    this._sagaInstanceRepository = null;
   }
 
   async beginTransaction(): Promise<void> {
@@ -102,7 +180,6 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     this.entityManager = queryRunner.manager;
-    this.initializeRepositories(this.entityManager);
     this.queryRunnerInitialized = true;
   }
 
@@ -117,6 +194,7 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
       await this.entityManager.queryRunner.release();
       this.entityManager = null;
       this.queryRunnerInitialized = false;
+      this.resetRepositories(); // Reset so new instances are created for next transaction
     }
   }
 
@@ -131,12 +209,12 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
       await this.entityManager.queryRunner.release();
       this.entityManager = null;
       this.queryRunnerInitialized = false;
+      this.resetRepositories();
     }
   }
 
   async execute<T>(work: () => Promise<T>): Promise<T> {
     if (this.entityManager && this.queryRunnerInitialized) {
-      this.initializeRepositories(this.entityManager);
       return work();
     }
 
@@ -157,6 +235,7 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
       await queryRunner.release();
       this.entityManager = null;
       this.queryRunnerInitialized = false;
+      this.resetRepositories();
     }
   }
 }
