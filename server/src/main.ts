@@ -21,13 +21,6 @@ async function bootstrap() {
     }),
   );
 
-  // client.collectDefaultMetrics();
-
-  // app.getHttpAdapter().get('/metrics', async (_request, reply) => {
-  //   reply.header('Content-Type', client.register.contentType);
-  //   reply.send(await client.register.metrics());
-  // });
-
   const metricService = app.get(MetricService);
   app.useGlobalInterceptors(new MetricInterceptor(metricService));
 
