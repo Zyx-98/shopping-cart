@@ -49,7 +49,7 @@ export class ProductRepository implements IProductRepository {
         { ...criteria, pagination },
         {
           alias: 'product',
-          allowedFilters: ['uuid', 'name'],
+          allowedFilters: ['uuid', 'name', 'price'],
           allowedSorts: ['name', 'uuid', 'createdAt'],
           defaultSort: [{ field: 'createdAt', direction: 'DESC' }],
         },

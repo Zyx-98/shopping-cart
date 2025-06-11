@@ -7,28 +7,27 @@ import {
 
 export class ProductQueryDto {
   @ApiPropertyOptional({
-    description: 'Filter item',
+    description: `
+    Object to filter items.
+
+    ### Syntax:
+    \`filter[fieldName][operator]=value\`
+
+    ### Available Operators:
+    - \`eq\`: Equals (=)
+    - \`neq\`: Not equals (!=)
+    - \`gt\`: Greater than (>)
+    - \`gte\`: Greater than or equal to (>=)
+    - \`lt\`: Less than (<)
+    - \`lte\`: Less than or equal to (<=)
+    - \`like\`: LIKE (case-sensitive)
+    - \`ilike\`: ILIKE (case-insensitive)
+    - \`in\`: IN (comma-separated values for arrays)
+    - \`isNull\`: IS NULL (e.g., \`filter[fieldName][isNull]=true\`)
+    - \`isNotNull\`: IS NOT NULL (e.g., \`filter[fieldName][isNotNull]=true\`)
+    `,
     type: 'object',
-    additionalProperties: {
-      type: 'object',
-      properties: {
-        eq: { type: 'any', description: 'Equals (=)' },
-        neq: { type: 'any', description: 'Not equals (!=)' },
-        gt: { type: 'any', description: 'Greater than (>)' },
-        gte: { type: 'any', description: 'Greater than or equal to (>=)' },
-        lt: { type: 'any', description: 'Less than (<)' },
-        lte: { type: 'any', description: 'Less than or equal to (<=)' },
-        like: { type: 'string', description: 'Like (case-sensitive)' },
-        ilike: { type: 'string', description: 'ILike (case-insensitive)' },
-        in: {
-          type: 'array',
-          items: { type: 'any' },
-          description: 'In a list of values',
-        },
-        isNull: { type: 'boolean', description: 'Is null' },
-        isNotNull: { type: 'boolean', description: 'Is not null' },
-      },
-    },
+    additionalProperties: false,
   })
   @IsOptional()
   filter?: FilterParams;

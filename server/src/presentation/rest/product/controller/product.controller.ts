@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { GetProductListQuery } from 'src/core/application/product/query/get-product-list/get-product-list.query';
 import { ProductQueryDto } from '../dto/product-query.dto';
 import { ProductDto } from 'src/core/application/product/dto/product.dto';
@@ -12,6 +12,11 @@ export class ProductController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
+  @ApiQuery({
+    name: 'filter[name][ilike]',
+    required: false,
+  })
+  @ApiQuery({ name: 'filter[price][gte]', required: false })
   @ApiOperation({ summary: 'Retrieve a paginated list of product' })
   @ApiResponse({
     status: 200,
