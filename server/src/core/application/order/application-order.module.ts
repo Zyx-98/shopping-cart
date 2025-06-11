@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { OrderProcessingSaga } from './saga/order-processing.saga';
 import { GetOrderDetailHandler } from './query/get-order-detail/get-order-detail.handler';
 import { PlaceOrderHandler } from './command/place-order/place-order.handler';
 import { MarkOrderFailHandler } from './command/mark-order-fail/mark-order-fail.handler';
@@ -10,7 +9,6 @@ import { MarkOrderAsCompleteHandler } from './command/mark-order-as-complete/mar
 
 @Module({
   providers: [
-    OrderProcessingSaga,
     GetOrderDetailHandler,
     PlaceOrderHandler,
     MarkOrderFailHandler,
@@ -20,7 +18,6 @@ import { MarkOrderAsCompleteHandler } from './command/mark-order-as-complete/mar
     OrderMapper,
   ],
   exports: [
-    OrderProcessingSaga,
     GetOrderDetailHandler,
     PlaceOrderHandler,
     MarkOrderFailHandler,

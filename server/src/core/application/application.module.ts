@@ -5,6 +5,7 @@ import { ApplicationInventoryModule } from './inventory/application-inventory.mo
 import { ApplicationCartModule } from './cart/application-cart.module';
 import { ApplicationAuthModule } from './auth/application-auth.module';
 import { ApplicationPaymentModule } from './payment/application-payment.module';
+import { ApplicationSagaModule } from './saga/application-saga.module';
 
 @Global()
 @Module({
@@ -15,6 +16,7 @@ import { ApplicationPaymentModule } from './payment/application-payment.module';
     ApplicationCartModule,
     ApplicationAuthModule,
     ApplicationPaymentModule,
+    ApplicationSagaModule,
   ],
   exports: [
     ApplicationProductModule,
@@ -23,6 +25,7 @@ import { ApplicationPaymentModule } from './payment/application-payment.module';
     ApplicationCartModule,
     ApplicationAuthModule,
     ApplicationPaymentModule,
+    ApplicationSagaModule,
   ],
 })
 export class ApplicationModule {}
