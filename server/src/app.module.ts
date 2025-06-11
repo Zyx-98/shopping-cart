@@ -8,7 +8,7 @@ import { ApplicationModule } from './core/application/application.module';
 @Module({
   imports: [
     CqrsModule.forRoot(),
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }), // Load environment variables
+    ConfigModule.forRoot({ isGlobal: true }), // Load environment variables
     ApplicationModule,
     InfrastructureModule,
     PresentationModule,
