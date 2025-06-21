@@ -137,6 +137,7 @@ export class TypeOrmQueryBuilderService {
 
     // Apply filters
     const filters = criteria.filter ?? {};
+
     this.applyFilters<T>(queryBuilder, filters, alias, options?.allowedFilters);
 
     // Apply sorting
@@ -204,16 +205,8 @@ export class TypeOrmQueryBuilderService {
       return {
         data: items,
         limit,
-        nextCursor: seekingPrevious
-          ? hasMore
-            ? this.encodeCursor(items[0], sorts)
-            : null
-          : nextItemCursor,
-        previousCursor: seekingPrevious
-          ? previousItemCursor
-          : hasMore || !!nextCursor
-            ? this.encodeCursor(items[0], sorts)
-            : null,
+        nextCursor: nextItemCursor,
+        previousCursor: previousItemCursor,
         hasNextPage: seekingPrevious
           ? !!nextCursor ||
             items.length === limit + 1 ||

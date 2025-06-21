@@ -16,7 +16,7 @@ export class CartSchema {
   @PrimaryColumn({ type: 'uuid' })
   uuid: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'uuid', name: 'customer_id' })
   customerId: string;
 
   @OneToOne((_) => CustomerSchema)

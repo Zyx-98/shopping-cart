@@ -5,11 +5,11 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -22,7 +22,10 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt-auth.guard';
 import { RequestWithUser } from '../../auth/shared/request/request-with-user.request';
-import { CartDto } from 'src/core/application/cart/dto/cart.dto';
+import {
+  CartDto,
+  CartDtoWithCursorPagination,
+} from 'src/core/application/cart/dto/cart.dto';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
 import { IsCustomerGuard } from 'src/infrastructure/auth/guards/is-customer.guard';
 import { GetCartByCustomerIdQuery } from 'src/core/application/cart/query/get-cart-by-customer-id/get-cart-by-customer-id.query';
@@ -34,6 +37,7 @@ import { RemoveItemFromCartCommand } from 'src/core/application/cart/command/rem
 import { UpdateItemQuantityRequestDto } from '../dto/update-item-quantity-request.dto';
 import { UpdateItemQuantityCommand } from 'src/core/application/cart/command/update-item-quantity/update-item-quantity.command';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { CartQueryDto } from '../dto/cart-query.dto';
 
 @ApiTags('Cart')
 @ApiBearerAuth('JWT-auth')
@@ -57,14 +61,18 @@ export class CartController {
     status: 404,
     description: 'Active cart not found for customer',
   })
-  async getCart(@Req() req: RequestWithUser): Promise<CartDto> {
+  async getCart(
+    @Req() req: RequestWithUser,
+    @Query() queryCriteria: CartQueryDto,
+  ): Promise<CartDtoWithCursorPagination | null> {
     const customerId = CustomerId.create(req.user.customerId || '');
-    const query = new GetCartByCustomerIdQuery(customerId);
-    const cartDto = await this.queryBus.execute(query);
+    const query = new GetCartByCustomerIdQuery(customerId, {
+      limit: queryCriteria.limit,
+      nextCursor: queryCriteria.nextCursor,
+      previousCursor: queryCriteria.previousCursor,
+    });
 
-    if (!cartDto) {
-      throw new NotFoundException('Active cart not found for this customer.');
-    }
+    const cartDto = await this.queryBus.execute(query);
 
     return cartDto;
   }
@@ -74,7 +82,7 @@ export class CartController {
   @ApiResponse({
     status: 201,
     description: 'Item added successfully (return updated cart)',
-    type: CartDto,
+    type: CartDtoWithCursorPagination,
   })
   @ApiResponse({
     status: 400,
@@ -83,7 +91,7 @@ export class CartController {
   async addCartItem(
     @Body() addCartItemDto: AddCartItemRequestDto,
     @Req() req: RequestWithUser,
-  ) {
+  ): Promise<CartDtoWithCursorPagination | null> {
     const command = new AddItemToCartCommand(
       CustomerId.create(req.user.customerId || ''),
       ProductId.create(addCartItemDto.productId),
@@ -92,7 +100,7 @@ export class CartController {
 
     await this.commandBus.execute(command);
 
-    return this.getCart(req);
+    return this.getCart(req, { limit: 10 });
   }
 
   @Delete('items/:productId')
@@ -135,7 +143,7 @@ export class CartController {
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() updateDto: UpdateItemQuantityRequestDto,
     @Req() req: RequestWithUser,
-  ): Promise<CartDto> {
+  ): Promise<CartDtoWithCursorPagination | null> {
     const command = new UpdateItemQuantityCommand(
       CustomerId.create(req.user.customerId || ''),
       ProductId.create(productId),
@@ -144,6 +152,6 @@ export class CartController {
 
     await this.commandBus.execute(command);
 
-    return this.getCart(req);
+    return this.getCart(req, { limit: 10 });
   }
 }

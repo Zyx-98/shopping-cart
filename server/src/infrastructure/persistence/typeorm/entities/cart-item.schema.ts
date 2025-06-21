@@ -1,4 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { CartSchema } from './cart.schema';
 
 @Entity('cart_items')
@@ -12,10 +20,21 @@ export class CartItemSchema {
   @Column({ type: 'numeric' })
   price: number;
 
-  @Column({ type: 'uuid', nullable: false })
+  @Column({ type: 'uuid', name: 'product_id', nullable: false })
   productId: string;
 
-  @ManyToOne(() => CartSchema, (cart) => cart.cartItems)
+  @Column({ type: 'uuid', name: 'cart_id', nullable: false })
+  cartId: string;
+
+  @ManyToOne(() => CartSchema, (cart) => cart.cartItems, {
+    onUpdate: 'RESTRICT',
+  })
   @JoinColumn({ name: 'cart_id', referencedColumnName: 'uuid' })
   cart: CartSchema;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
+  updatedAt: Date;
 }

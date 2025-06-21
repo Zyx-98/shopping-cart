@@ -5,7 +5,7 @@ import {
 } from '../../types/pagination.type';
 
 export interface ICursorPaginationRepository<T> {
-  findWithPageLimit(
+  findWithCursorPagination(
     criteria: QueryCriteria,
     cursor: CursorPaginationParams,
   ): Promise<CursorPaginatedResult<T>>;

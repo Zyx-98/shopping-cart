@@ -5,12 +5,13 @@ import {
 } from 'src/core/domain/cart/repository/cart.repository';
 import { CartMapper } from '../../mapper/cart.mapper';
 import { GetCartByCustomerIdQuery } from './get-cart-by-customer-id.query';
-import { CartDto } from '../../dto/cart.dto';
+import { CartDtoWithCursorPagination } from '../../dto/cart.dto';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 @QueryHandler(GetCartByCustomerIdQuery)
 export class GetCartByCustomerIdHandler
-  implements IQueryHandler<GetCartByCustomerIdQuery, CartDto | null>
+  implements
+    IQueryHandler<GetCartByCustomerIdQuery, CartDtoWithCursorPagination | null>
 {
   constructor(
     @Inject(CART_REPOSITORY)
@@ -18,13 +19,19 @@ export class GetCartByCustomerIdHandler
     private readonly cartMapper: CartMapper,
   ) {}
 
-  async execute(query: GetCartByCustomerIdQuery): Promise<CartDto | null> {
-    const { customerId } = query;
+  async execute(
+    query: GetCartByCustomerIdQuery,
+  ): Promise<CartDtoWithCursorPagination | null> {
+    const { customerId, cursor } = query;
 
-    const cart = await this.cartRepository.findByUniqueId(customerId);
+    const cart =
+      await this.cartRepository.findByCustomerIdWithCursorPaginatedCartItems(
+        customerId,
+        cursor,
+      );
 
     if (!cart) return null;
 
-    return this.cartMapper.toDto(cart);
+    return this.cartMapper.toDtoWithCursorPagination(cart);
   }
 }

@@ -20,7 +20,6 @@ export interface CartProps {
 }
 
 export class CartAggregate extends BaseAggregateRoot<CartId> {
-  private _cartId: CartId;
   private _cartItems: CartItem[] = [];
   private _customerId: CustomerId;
   private _createdAt: Date;
@@ -83,13 +82,7 @@ export class CartAggregate extends BaseAggregateRoot<CartId> {
       exitingCartItem.increaseQuantity(quantity);
       this._updatedAt = new Date();
     } else {
-      const newItem = new CartItem(
-        null,
-        this._cartId,
-        productId,
-        quantity,
-        price,
-      );
+      const newItem = new CartItem(null, this._id, productId, quantity, price);
       this._cartItems.push(newItem);
       this._updatedAt = new Date();
     }

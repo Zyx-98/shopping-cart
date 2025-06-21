@@ -8,6 +8,12 @@ import { CartSchema } from '../entities/cart.schema';
 import { Injectable } from '@nestjs/common';
 import { CartItemSchema } from '../entities/cart-item.schema';
 import { CustomerId } from 'src/core/domain/customer/value-object/customer-id.vo';
+import {
+  CursorPaginationParams,
+  CursorPaginatedResult,
+} from 'src/core/domain/shared/types/pagination.type';
+import { TypeOrmQueryBuilderService } from '../query-builder/typeorm-query-builder.service';
+import { CartItem } from 'src/core/domain/cart/entity/cart-item.entity';
 
 @Injectable()
 export class CartRepository implements ICartRepository {
@@ -17,7 +23,51 @@ export class CartRepository implements ICartRepository {
     @InjectRepository(CartItemSchema)
     private readonly cartItemRepository: Repository<CartItemSchema>,
     private readonly mapper: PersistenceCartMapper,
+    private readonly queryBuilderService: TypeOrmQueryBuilderService,
   ) {}
+  async findByCustomerIdWithCursorPaginatedCartItems(
+    customerId: CustomerId,
+    cursor: CursorPaginationParams,
+  ): Promise<{
+    cart: CartAggregate;
+    pagination: Omit<CursorPaginatedResult<CartItem>, 'data'>;
+  } | null> {
+    const cart = await this.ormRepository.findOne({
+      where: {
+        customerId: customerId.toString(),
+      },
+    });
+
+    if (!cart) {
+      return null;
+    }
+
+    const paginatedEntitiesResult =
+      await this.queryBuilderService.buildQueryWithCursor<CartItemSchema>(
+        this.cartItemRepository,
+        { filter: { cartId: { eq: cart.uuid } } },
+        cursor,
+        {
+          alias: 'cart',
+          allowedFilters: ['cartId'],
+          allowedSorts: ['createdAt', 'uuid'],
+          defaultLimit: 10,
+          defaultSort: [{ field: 'uuid', direction: 'ASC' }],
+        },
+      );
+
+    const { data: cartItems, ...pagination } = paginatedEntitiesResult;
+
+    const domain = this.mapper.toDomain({
+      ...cart,
+      cartItems,
+    });
+
+    return {
+      cart: domain,
+      pagination,
+    };
+  }
 
   async findByUniqueId(customerId: CustomerId): Promise<CartAggregate | null> {
     const schema = await this.ormRepository.findOne({
@@ -57,9 +107,14 @@ export class CartRepository implements ICartRepository {
 
     if (!cart) {
       cart = this.ormRepository.create(persistence);
+
+      await this.ormRepository.save(cart);
+
+      return entity;
     }
 
     const existingCartItems = cart.cartItems || [];
+
     const updatedCartItems: CartItemSchema[] = [];
 
     const existingCartItemMap = new Map(
@@ -78,15 +133,14 @@ export class CartRepository implements ICartRepository {
           existingItem.quantity !== incomingItem.quantity ||
           existingItem.price !== incomingItem.price
         ) {
-          existingItem.quantity = incomingItem.quantity || 1;
-          existingItem.price = incomingItem.price || 0;
+          existingItem.quantity = incomingItem.quantity ?? 1;
+          existingItem.price = incomingItem.price ?? 0;
+        }
+        if (existingItem.quantity) {
           updatedCartItems.push(existingItem);
         }
       } else if ((incomingItem.quantity ?? 0) > 0) {
-        const newItem = this.cartItemRepository.create({
-          ...incomingItem,
-          cart,
-        });
+        const newItem = this.cartItemRepository.create(incomingItem);
         updatedCartItems.push(newItem);
       }
     }
@@ -99,7 +153,7 @@ export class CartRepository implements ICartRepository {
 
     cart.cartItems = updatedCartItems;
 
-    const result = await this.cartItemRepository.save(cart);
+    const result = await this.ormRepository.save(cart);
 
     return this.mapper.toDomain(result);
   }

@@ -19,7 +19,7 @@ export class PersistenceCartMapper {
       CartItem.reconstitute({
         id: CartItemId.create(cartItem.uuid),
         cartId: CartId.create(schema.uuid),
-        productId: ProductId.create(schema.uuid),
+        productId: ProductId.create(cartItem.productId),
         quantity: Quantity.create(cartItem.quantity),
         price: Price.create(cartItem.price),
       }),
@@ -28,7 +28,7 @@ export class PersistenceCartMapper {
     return CartAggregate.reconstitute({
       id: CartId.create(schema.uuid),
       cartItems,
-      customerId: CustomerId.create(schema.customer.uuid),
+      customerId: CustomerId.create(schema.customer?.uuid || schema.customerId),
       createdAt: schema.createdAt,
       updatedAt: schema.updatedAt,
     });
@@ -41,6 +41,7 @@ export class PersistenceCartMapper {
       updatedAt: aggregate.updatedAt,
       cartItems: aggregate.cartItems.map((carItem) => ({
         uuid: carItem.cartItemId.toString(),
+        cartId: aggregate.id.toString(),
         quantity: carItem.quantity.toNumber(),
         price: carItem.priceAtAddition.amount,
         productId: carItem.productId.toString(),

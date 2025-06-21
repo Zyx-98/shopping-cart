@@ -95,8 +95,10 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
         this.getManager().getRepository(CartSchema),
         this.getManager().getRepository(CartItemSchema),
         new PersistenceCartMapper(),
+        new TypeOrmQueryBuilderService(),
       );
     }
+
     return this._cartRepository;
   }
 
