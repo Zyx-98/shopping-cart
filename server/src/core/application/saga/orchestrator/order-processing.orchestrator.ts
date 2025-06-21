@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ofType, Saga } from '@nestjs/cqrs';
 import { concatMap, EMPTY, map, Observable, of } from 'rxjs';
 import { ReserveInventoryForOrderCommand } from '../../inventory/command/reserve-inventory-for-order/reserve-inventory-for-order.command';
@@ -18,15 +18,23 @@ import { MarkOrderAsCompleteCommand } from '../../order/command/mark-order-as-co
 
 @Injectable()
 export class OrderProcessingOrchestrator {
+  private readonly logger = new Logger(OrderProcessingOrchestrator.name);
+
   @Saga()
   orderCreated = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(OrderCreatedEvent),
       concatMap((event) => {
+        this.logger.log(
+          `Processing payment for order ID: ${event.orderId.toString()}`,
+        );
         return of(
           new InitiatePaymentCommand(event.orderId, event.totalAmount),
         ).pipe(
           concatMap(() => {
+            this.logger.log(
+              `Reserving inventory for order ID: ${event.orderId.toString()}`,
+            );
             return of(
               new ReserveInventoryForOrderCommand(
                 event.orderId,
@@ -46,6 +54,9 @@ export class OrderProcessingOrchestrator {
     return events$.pipe(
       ofType(OrderInventoryReservationFailedEvent),
       map((event) => {
+        this.logger.log(
+          `Handling inventory reservation failure for order ID: ${event.orderId.toString()}`,
+        );
         return new MarkOrderFailCommand(event.orderId);
       }),
     );
@@ -58,6 +69,10 @@ export class OrderProcessingOrchestrator {
     return events$.pipe(
       ofType(OrderInventoryReservedEvent),
       map((event) => {
+        this.logger.log(
+          `Handling inventory reserved event for order ID: ${event.orderId.toString()}`,
+        );
+
         return new MarkOrderAwaitingPaymentCommand(event.orderId);
       }),
     );
@@ -73,6 +88,9 @@ export class OrderProcessingOrchestrator {
         ).pipe(
           concatMap(() => {
             if (event.paymentId) {
+              this.logger.log(
+                `Compensating inventory for canceled order ID: ${event.orderId.toString()}`,
+              );
               return of(
                 new CancelPaymentForCanceledOrderCommand(event.orderId),
               );
@@ -90,6 +108,10 @@ export class OrderProcessingOrchestrator {
     return events$.pipe(
       ofType(PaymentFailedEvent),
       map((event) => {
+        this.logger.log(
+          `Handling payment failure for order ID: ${event.orderId.toString()}`,
+        );
+
         return new CancelOrderCommand(event.orderId);
       }),
     );
@@ -99,7 +121,13 @@ export class OrderProcessingOrchestrator {
   paymentPaid = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(PaymentPaidEvent),
-      map((event) => new MarkOrderAsCompleteCommand(event.orderId)),
+      map((event) => {
+        this.logger.log(
+          `Handling payment success for order ID: ${event.orderId.toString()}`,
+        );
+
+        new MarkOrderAsCompleteCommand(event.orderId);
+      }),
     );
   };
 }

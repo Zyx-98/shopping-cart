@@ -1,6 +1,6 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { MarkAsFailedCommand } from './mark-as-failed.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import {
   IPaymentRepository,
   PAYMENT_REPOSITORY,
@@ -10,6 +10,8 @@ import {
 export class MarkAsFailedHandler
   implements ICommandHandler<MarkAsFailedCommand>
 {
+  private readonly logger = new Logger(MarkAsFailedHandler.name);
+
   constructor(
     @Inject(PAYMENT_REPOSITORY)
     private readonly paymentRepository: IPaymentRepository,
@@ -32,5 +34,6 @@ export class MarkAsFailedHandler
     await this.paymentRepository.persist(payment);
 
     payment.commit();
+    this.logger.log(`Payment with ID ${paymentId.toString()} marked as failed`);
   }
 }

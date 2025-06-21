@@ -1,6 +1,6 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { ReserveInventoryForOrderCommand } from './reserve-inventory-for-order.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import { OrderInventoryReservationFailedEvent } from '../../event/order-inventory-reservation-failed.event';
 import { OrderInventoryReservedEvent } from '../../event/order-inventory-reserved.event';
 import {
@@ -19,6 +19,8 @@ import { InsufficientInventoryAvailableException } from 'src/core/domain/invento
 export class ReserveInventoryForOrderHandler
   implements ICommandHandler<ReserveInventoryForOrderCommand>
 {
+  private readonly logger = new Logger(ReserveInventoryForOrderHandler.name);
+
   private readonly LOCK_TIMEOUT_MS = 5000;
   private readonly RETRY_ATTEMPTS = 3;
   private readonly RETRY_DELAY_MS = 200;
@@ -35,6 +37,10 @@ export class ReserveInventoryForOrderHandler
     const { orderId, orderLines } = command;
     const acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
     await this.unitOfWork.beginTransaction();
+
+    this.logger.log(
+      `Reserving inventory for order with ID ${orderId.toValue()}`,
+    );
 
     const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
 
@@ -55,6 +61,10 @@ export class ReserveInventoryForOrderHandler
       );
 
       for (const inventory of inventories) {
+        this.logger.warn(
+          `Reserving inventory for product: ${inventory.productId.toString()}`,
+        );
+
         const lockName = `inventory_lock:${inventory.id.toString()}`;
 
         const lockId = await this.distributedLockService.acquire(
@@ -65,6 +75,9 @@ export class ReserveInventoryForOrderHandler
         );
 
         if (!lockId) {
+          this.logger.error(
+            `Failed to acquire lock for inventory: ${inventory.id.toString()}`,
+          );
           for (const acquiredLock of acquiredLocks) {
             await this.distributedLockService.release(
               acquiredLock.lockName,
@@ -82,6 +95,8 @@ export class ReserveInventoryForOrderHandler
             new OrderInventoryReservationFailedEvent(orderId),
           );
 
+          await this.unitOfWork.commitTransaction();
+
           return;
         }
 
@@ -93,7 +108,11 @@ export class ReserveInventoryForOrderHandler
         const orderLine = orderLines.find((line) =>
           line.productId.equals(inventory.productId),
         );
+
         if (orderLine) {
+          this.logger.warn(
+            `Reserving ${orderLine.quantity.value} units of inventory for product: ${inventory.productId.toString()}`,
+          );
           inventory.removeQuantity(orderLine.quantity);
         }
       }
@@ -107,6 +126,9 @@ export class ReserveInventoryForOrderHandler
       await this.unitOfWork.commitTransaction();
       this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
     } catch (error) {
+      this.logger.error(
+        `Failed to reserve inventory for order with ID ${orderId.toValue()}`,
+      );
       if (error instanceof InsufficientInventoryAvailableException) {
         sagaInstance.advanceStep(
           OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,

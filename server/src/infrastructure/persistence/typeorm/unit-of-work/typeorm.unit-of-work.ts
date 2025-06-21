@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ICartRepository } from 'src/core/domain/cart/repository/cart.repository';
 import { ICouponRepository } from 'src/core/domain/coupon/repositories/coupon.repository';
 import { ICustomerRepository } from 'src/core/domain/customer/repository/customer.repository';
@@ -39,6 +39,7 @@ import { PersistenceSagaInstanceMapper } from '../mappers/persistence-saga-insta
 
 @Injectable()
 export class TypeOrmUnitOfWork implements IUnitOfWork {
+  private readonly logger = new Logger(TypeOrmUnitOfWork.name);
   private entityManager: EntityManager | null = null;
   private queryRunnerInitialized = false;
 
@@ -57,6 +58,9 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
 
   private getManager(): EntityManager {
     if (!this.entityManager) {
+      this.logger.error(
+        `Transaction not started. Call beginTransaction() first, or use execute().`,
+      );
       throw new Error(
         `Transaction not started. Call beginTransaction() first, or use execute().`,
       );
@@ -227,9 +231,11 @@ export class TypeOrmUnitOfWork implements IUnitOfWork {
     try {
       const result = await work();
       await queryRunner.commitTransaction();
+      this.logger.log('Transaction committed successfully');
       return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
+      this.logger.error('Transaction failed, rolling back', error);
       throw error;
     } finally {
       await queryRunner.release();

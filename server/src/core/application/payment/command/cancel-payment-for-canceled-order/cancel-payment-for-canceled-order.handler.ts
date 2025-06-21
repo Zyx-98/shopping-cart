@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CancelPaymentForCanceledOrderCommand } from './cancel-payment-for-canceled-order.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import {
   IUnitOfWork,
   UNIT_OF_WORK,
@@ -12,6 +12,10 @@ import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-process
 export class CancelPaymentForCanceledOrderHandler
   implements ICommandHandler<CancelPaymentForCanceledOrderCommand>
 {
+  private readonly logger = new Logger(
+    CancelPaymentForCanceledOrderHandler.name,
+  );
+
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
@@ -44,6 +48,10 @@ export class CancelPaymentForCanceledOrderHandler
 
       await paymentRepository.persist(payment);
       await sagaInstanceRepository.persist(sagaInstance);
+
+      this.logger.log(
+        `Payment for canceled order with ID ${orderId.toValue()} has been successfully canceled`,
+      );
     });
   }
 }

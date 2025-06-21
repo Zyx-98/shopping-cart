@@ -1,6 +1,6 @@
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { CancelOrderCommand } from './cancel-order.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import {
   IUnitOfWork,
   UNIT_OF_WORK,
@@ -10,6 +10,8 @@ import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-process
 
 @CommandHandler(CancelOrderCommand)
 export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
+  private readonly logger = new Logger(CancelOrderHandler.name);
+
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
@@ -25,6 +27,7 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
       const order = await orderRepository.findById(orderId);
 
       if (!order) {
+        this.logger.error(`Order with ID ${orderId.toString()} not found`);
         throw new NotFoundException(
           `Order with ID ${orderId.toString()} not found`,
         );
@@ -54,6 +57,9 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
       await sagaInstanceRepository.persist(sagaInstance);
 
       order.commit();
+      this.logger.log(
+        `Order with ID ${orderId.toString()} canceled successfully`,
+      );
     });
   }
 }

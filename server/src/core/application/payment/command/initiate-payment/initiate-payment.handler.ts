@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { InitiatePaymentCommand } from './initiate-payment.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import { PaymentAggregate } from 'src/core/domain/payment/aggregate/payment.aggregate';
 import {
   IUnitOfWork,
@@ -13,6 +13,8 @@ import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-process
 export class InitiatePaymentHandler
   implements ICommandHandler<InitiatePaymentCommand>
 {
+  private readonly logger = new Logger(InitiatePaymentHandler.name);
+
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
@@ -50,6 +52,10 @@ export class InitiatePaymentHandler
       );
 
       await sagaInstanceRepository.persist(sagaInstance);
+
+      this.logger.log(
+        `Payment initiated successfully for order ID ${orderId.toString()}`,
+      );
     });
   }
 }

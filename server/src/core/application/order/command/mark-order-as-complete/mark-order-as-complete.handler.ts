@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { MarkOrderAsCompleteCommand } from './mark-order-as-complete.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import {
   IUnitOfWork,
   UNIT_OF_WORK,
@@ -12,6 +12,8 @@ import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-process
 export class MarkOrderAsCompleteHandler
   implements ICommandHandler<MarkOrderAsCompleteCommand>
 {
+  private readonly logger = new Logger(MarkOrderAsCompleteHandler.name);
+
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
@@ -26,6 +28,7 @@ export class MarkOrderAsCompleteHandler
       const order = await orderRepository.findById(orderId);
 
       if (!order) {
+        this.logger.error(`Order with ID ${orderId.toString()} not found`);
         throw new Error(`Order with ID ${orderId.toString()} not found`);
       }
 
@@ -45,6 +48,10 @@ export class MarkOrderAsCompleteHandler
       sagaInstance.complete(OrderProcessingSagaStep.ORDER_COMPLETED);
 
       await sagaInstanceRepository.persist(sagaInstance);
+
+      this.logger.log(
+        `Order with ID ${orderId.toString()} marked as complete successfully`,
+      );
     });
   }
 }

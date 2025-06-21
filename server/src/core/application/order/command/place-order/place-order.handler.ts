@@ -79,6 +79,10 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
 
       await this.unitOfWork.commitTransaction();
 
+      this.logger.log(
+        `Order placed successfully with ID: ${order.id.toString()}`,
+      );
+
       aggregate.commit();
       return { uuid: order.id.toString() };
     } catch (error) {

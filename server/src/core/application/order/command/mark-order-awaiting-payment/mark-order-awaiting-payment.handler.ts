@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { MarkOrderAwaitingPaymentCommand } from './mark-order-awaiting-payment.command';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import {
   IUnitOfWork,
   UNIT_OF_WORK,
@@ -12,6 +12,8 @@ import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-process
 export class MarkOrderAwaitingPaymentHandler
   implements ICommandHandler<MarkOrderAwaitingPaymentCommand>
 {
+  private readonly logger = new Logger(MarkOrderAwaitingPaymentHandler.name);
+
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
@@ -49,6 +51,10 @@ export class MarkOrderAwaitingPaymentHandler
       sagaInstance.advanceStep(OrderProcessingSagaStep.PAYMENT_PROCESSING);
 
       await sagaInstanceRepository.persist(sagaInstance);
+
+      this.logger.log(
+        `Order with ID ${orderId.toString()} marked as awaiting payment successfully`,
+      );
     });
   }
 }
