@@ -158,7 +158,7 @@ export class TypeOrmQueryBuilderService {
 
     this.applySorts<T>(queryBuilder, actualSorts, alias, options?.allowedSorts);
 
-    const cursorToDecode = nextCursor || previousCursor;
+    const cursorToDecode = previousCursor || nextCursor;
 
     if (cursorToDecode) {
       try {
@@ -193,12 +193,11 @@ export class TypeOrmQueryBuilderService {
       }
 
       const nextItemCursor =
-        (seekingPrevious ? hasNextPage : hasNextPage) && items.length > 0
+        hasNextPage && items.length > 0
           ? this.encodeCursor(items[items.length - 1], sorts)
           : null;
       const previousItemCursor =
-        (seekingPrevious ? hasPreviousPage : hasPreviousPage) &&
-        items.length > 0
+        hasPreviousPage && items.length > 0
           ? this.encodeCursor(items[0], sorts)
           : null;
 
@@ -207,14 +206,8 @@ export class TypeOrmQueryBuilderService {
         limit,
         nextCursor: nextItemCursor,
         previousCursor: previousItemCursor,
-        hasNextPage: seekingPrevious
-          ? !!nextCursor ||
-            items.length === limit + 1 ||
-            (items.length > 0 && hasMore)
-          : hasNextPage,
-        hasPreviousPage: seekingPrevious
-          ? hasPreviousPage
-          : !!nextCursor || (items.length > 0 && hasMore && !!previousCursor),
+        hasNextPage,
+        hasPreviousPage,
       };
     } catch (error) {
       this.logger.error(`Cursor query execution failed: ${error}`);
@@ -382,14 +375,13 @@ export class TypeOrmQueryBuilderService {
             const operator = direction === 'ASC' ? '>' : '<';
 
             const paramName = `cursorValue_${sortField}_op_${i}`;
-
             innerSubQuery.andWhere(
               `${alias}.${sortField} ${operator} :${paramName}`,
               { [paramName]: cursorValue },
             );
-
-            subQuery.orWhere(conditions);
           });
+
+          subQuery.orWhere(conditions);
         }
       }),
     );
