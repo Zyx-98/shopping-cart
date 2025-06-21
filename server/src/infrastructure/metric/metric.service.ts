@@ -28,7 +28,7 @@ export class MetricService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
-    // client.collectDefaultMetrics();
+    client.collectDefaultMetrics();
   }
 
   onModuleDestroy() {
