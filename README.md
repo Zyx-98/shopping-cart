@@ -1,108 +1,407 @@
-# Project Title: NestJS Shopping Cart Platform
+# Nestjs Shopping Cart - Clean Architecture
 
-## 🚀 Overview
+This project is a personal shopping cart web application. It is inspired by concepts explored in [Event Sourcing in Laravel](https://event-sourcing-laravel.com/) by **SPATIE**. It is my attempt to create a clean architecture based application in nestjs.
 
-This project is a robust shopping cart platform built with **NestJS**, leveraging a **Clean Architecture** and **Domain-Driven Design (DDD)** principles. It employs a **domain event-driven approach** to handle complex business logic and ensure decoupling between different parts of the system. The primary goal is to create a scalable, maintainable, and testable application.
+![Clean Architecture](./docs/architucture.excalidraw.png)
 
----
+## 1. Core Architecture & Design Pattern
 
-## ✨ Key Features
+- **Clean architecture:** The application is strictly layered to ensure separation of concerns, testability, and independence from external frameworks and infrastructure.
+  - **Domain layer:** Container core business logic, aggregates, and value objects, with zero external dependencies.
+  - **Application Layer:** Orchestrates use cases, commands, and sagas. Defines interfaces(ports) for external dependencies.
+  - **Infrastructure Layer:** Provides concrete implementations (adapters) for persistence, caching, and further payment gateways.
+  - **Presentation layer:** Exposes the application to the outside world via REST APIs.
+- **Domain-Driven Design (DDD):** Employs DDD principles to model a complex business domain.
+  - **Aggregate:**: Enforces business rules and data consistency within transactional boundaries like the `OrderAggregate`. All state changes for an order are managed through this single root, ensuring validity.
+  - **Value Objects:** Ensures correctness and encapsulates business rules with objects like `Price`, `OrderId`, and `SagaId`.
+- **Command Query Responsibility Segregation (CQRS):** Leverages the `@nestjs/cqrs` module to separate read (Query) and write (Command) operations, leading to a clearer and more scalable application flow.
+- **Saga Pattern (Orchestration):** Implements the Saga pattern to manage distributed transactions that span multiple domains (Order, Inventory, Payment), ensuring the entire process either completes successfully or is fully compensated.
+- **State Pattern:** The `OrderAggregate` uses the State Pattern to manage its lifecycle (`Pending`, `Completed`, `AwaitingPayment`, `Failed`, `Canceled`), encapsulating state-specific logic and transitions.
 
-* **Clean Architecture**: Clearly separated layers for domain, application, infrastructure, and presentation logic.
-* **Domain-Driven Design**: Focuses on the core domain and domain logic, using concepts like Aggregates, Entities, Value Objects, and Domain Events.
-* **Event-Driven Approach**: Utilizes domain events and sagas for orchestrating complex workflows and ensuring eventual consistency.
-* **Concurrency Control**: Implements strategies to manage concurrent requests and prevent data inconsistencies.
-* **Monitoring & Performance**: Integrated monitoring tools and practices for identifying bottlenecks and ensuring system health.
+## 2. Key Feature & Business Logic
 
----
+- **End-to-End Order Processing Saga:** A complete, orchestrated saga handles the entire order lifecycle:
+  1. **Order Creation:** Creates the order record atomically with the saga initiation.
+  2. **Inventory Reservation:** Checks for and reserves stock before processing payment.
+  3. **Payment Processing:** Initialize payment after deducting stock from inventory.
+  4. **Order Completion:** Marks the order as complete after successful payment.
+- **Idempotent Rest API:**
+  - The `POST \orders` endpoint (and other critical write endpoints) are idempotent.
+  - Uses an `Idempotency-Key` header and a customer Nestjs interceptor with a Redis backend to prevent duplication orders or payments from client retries.
+- **Distributed lock:**
+  - Implement a distributed locking mechanism using Redis to prevent race conditions in high-contention scenarios.
+  - This is crucial for operations like inventory reservation, ensuring that if two concurrent requests try to claim the last item, only one will succeed, thus preventing overselling and maintaining data integrity.
+- **Resilience & Fault Tolerance**
+  - **Stateful Saga Persistence:**
+    - Uses a `SagaInstance` entity and repository to durably persist the state(`currentStep`, `payload`) of every single order process.
+    - This provides a complete audit trail and is the foundation for crash recovery.
+  - **Automated Crash Recovery:**
+    - A `SagaRecoveryService` runs on application startup (`OnApplicationBootstrap`).
+    - It automatically finds any sagas that were interrupted by a server crash or deployment and resumes them from their last successfully completed step, ensuring data consistency.
+  - **Compensation Transactions (Rollbacks):**
+    - If any step in saga fails (e.g., payment processing), the orchestrator automatically triggers compensation actions in reverse order.
+    - This includes canceling the order record, and releasing reserved inventory, ensuring the system  returns to a consistent state.
 
-## 🏗️ Project Structure
+## 3. Demo
 
-The project follows the principles of Clean Architecture, organizing code into distinct layers to achieve separation of concerns and improve maintainability.
+### 3.1 API
 
-### Core Layers (`server/src/core`)
+![Api swagger](/docs/api.png)
 
-This is the heart of the application, containing the business logic, independent of any framework or external agency.
+### 3.2 Monitoring
 
-* **`domain`**: This layer encapsulates the enterprise-wide business rules and concepts.
-    * **Aggregates** (e.g., `OrderAggregate`, `CartAggregate`): Clusters of entities and value objects treated as a single unit.
-    * **Entities** (e.g., `OrderLineEntity`, `CartItemEntity`): Objects with a distinct identity that runs through time and can change.
-    * **Value Objects** (e.g., `PriceVO`, `EmailVO`, `OrderIdVO`): Immutable objects representing descriptive aspects of the domain.
-    * **Domain Events** (e.g., `OrderCreatedEvent`, `PaymentFailedEvent`): Represent significant occurrences within the domain.
-    * **Repositories (Interfaces)** (e.g., `OrderRepository`, `ProductRepository`): Abstractions for data persistence, defined in the domain but implemented in the infrastructure layer.
-    * **Domain Services**: Encapsulate domain logic that doesn't naturally fit within an entity or value object.
-    * **Ports** (e.g., `UnitOfWorkInterface`): Interfaces defining how the domain communicates with outer layers (infrastructure).
+![Monitoring](/docs/monitoring2.png)
 
-* **`application`**: This layer orchestrates the domain objects to perform specific use cases. It contains:
-    * **Application Services**: Implement use cases by coordinating domain objects and repositories.
-    * **Commands & Queries (CQRS)** (e.g., `PlaceOrderCommand`, `GetProductListQuery`): Separates operations that change state from those that read state.
-    * **DTOs (Data Transfer Objects)** (e.g., `ProductDTO`, `CartDTO`): Carry data between layers, particularly between application and presentation.
-    * **Mappers** (e.g., `CartMapper`, `OrderMapper`): Convert data between domain objects and DTOs.
-    * **Sagas** (e.g., `OrderProcessingSaga`): Manage long-running transactions and coordinate domain events across multiple aggregates.
-    * **Ports** (e.g., `CacheInterface`, `PaymentGateway`): Interfaces for infrastructure services needed by the application layer.
+## 4. Structure Overview
 
-### Outer Layers
+```
+/core/domain
+├── order                               # Bounded Context for all Order-related business logic.
+│   ├── aggregate                       # Contains the OrderAggregate root, the guardian of order consistency.
+│   ├── entity                          # Domain entities that are part of an aggregate.
+│   ├── enum                            # Domain-specific enumerations.
+│   ├── event                           # Domain Events (e.g., OrderCreatedEvent)
+│   ├── exception                       # Custom exceptions for business rule violations.
+│   ├── mapper                          # Mappers for converting between domain object and other representation.
+│   ├── repository                      # Interfaces for persistence.
+│   ├── state                           # Implementations for the State Pattern.
+│   └── value-object                    # Immutable objects representing domain concepts.
+├── ...                                 # Other Bounded Contexts like Product, Inventory, Payment, etc.
+├── port                                # Domain-level ports
+│   └── unit-of-work.interface.ts       # Interface for managing atomic operations across multiple repositories.
+├── saga                                # Domain representation for the Saga process itself
+│   ├── entity                          # The SagaInstanceEntity, representing the persisted state of a saga.
+│   ├── enum                            # Enumerations for saga steps and statues.
+│   ├── interface                       # Interfaces related to the saga domain model.
+│   ├── repository                      # The ISagaInstanceRepository interface.
+│   └── value-object                    # Value object like SagaId.
+└── shared                              # Core shared across different domain.
+    ├──domain                           # Base classes like BaseAggregateRoot or shared value objects.
+    └──types                            # Shared types and interfaces.
+```
 
-These layers handle interactions with external systems and frameworks.
+```
+/core/application
+├── application.module.ts               # Aggregate all application-layer modules.
+├── auth                                # Application logic for authentication.
+│   ├── application-auth.module.ts      # NestJs module for auth-related application services.
+│   ├── command                         # Commands and handlers for auth actions (e.g., LoginCommand).
+│   └── dto                             # Data transfer object used within auth application services.
+├── cart                                # Application logic for shopping cart
+│   ├── application-cart.module.ts      # NestJs module for cart-related application services.
+│   ├── command                         # Commands and handlers for cart actions.
+│   ├── dto                             # Data transfer object
+│   ├── mapper                          # Mapper for mapping object logic and dto 
+│   └── query                           # Queries and handlers for fetching cart data.
+├── inventory                           # Application logic for inventory
+│   ├── application-inventory.module.ts # NestJs module for inventory-related application services.
+│   ├── command                         # Commands and handlers for inventory actions.
+│   └── event                           # Events published by actions.
+├── order                               # Application logic for order
+│   ├── application-order.module.ts     # Nestjs module for order-related application services.
+│   ├── command                         # Commands and handlers for order actions.
+│   ├── dto                             # Data transfer object.
+│   ├── mapper                          # Mapper for mapping between domain object and dto.
+│   └── query                           # Queries and handlers for fetching order data.
+├── payment                             # Application logic for payment
+│   ├── application-payment.module.ts   # NestJs module for payment-related application services.
+│   └── command                         # Commands and handlers for payment actions.
+├── port                                # Interfaces defining contracts for infrastructure layer.
+│   ├── cache.interface.ts              # Contract for caching service.
+│   ├── distributed-lock.interface.ts   # Contract for distributed locking mechanism.
+│   ├── hashing.service.ts              # Contract for a password hashing service.
+│   ├── idempotency.interface.ts        # Contract for handling idempotent requests.
+│   ├── payment.gateway.ts              # Contract for an external payment gateway
+│   └── token.service.ts                # Contract for generating and validating JWTs.
+├── product                             # Application logic for product
+│   ├── application-product.module.ts   # Nestjs module for product-related application services.
+│   ├── dto                             # Data transfer object.
+│   ├── mapper                          # Mapper for mapping between domain object and dto.
+│   └── query                           # Queries and handlers for fetching product data.
+└── saga                               # Logic for managing and recovering saga processes
+    ├── application-saga.module.ts     # Nestjs module for saga-related services.
+    ├── orchestrator                   # The SagaOrchestrator classes that drive the saga flow.
+    └── recover                        # The SagaRecoverService for handling crash consistency.
+```
 
-* **`infrastructure`** (`server/src/infrastructure`): This layer contains implementations of interfaces defined in the core layers. It includes:
-    * **Persistence**: Data access logic using TypeORM, including schema definitions, repositories implementations, and migrations.
-    * **Authentication/Authorization**: Guards, strategies (JWT, local), and services for securing the application.
-    * **Caching**: Redis implementation for caching services.
-    * **Distributed Lock**: Redis-based distributed lock mechanism for concurrency control.
-    * **Idempotency**: Services to ensure operations can be retried without unintended side effects.
-    * **Metrics**: Integration with Prometheus for collecting application metrics.
-    * **External Service Integrations**: Adapters for any external services (e.g., payment gateways).
+```
+/infrastructure
+├── auth                                    # Implementation for authentication.
+│   ├── auth.module.ts                      # Provides and configures auth services, strategies, and guards
+│   ├── guards                              # NestJs Guards (e.g., JwtAuthGuard, RolesGuard).
+│   ├── services                            # Services(e.g., JwtTokenService implementing ITokenService)
+│   └── strategies                          # Passport.js strategies (e.g., LocalStrategy, JwtStrategy).
+├── cache                                   # Implementation for caching
+│   ├── cache.module.ts                     
+│   └── redis-cache.service.ts              # Redis implementation of ICacheService 
+├── distributed-lock
+│   ├── distributed-lock.module.ts          
+│   └── redis-distributed-lock.service.ts   # Redis implementation for IDistributedLockService
+├── idempotency                             # Implementation for idempotency.
+│   ├── idempotency.module.ts
+│   ├── idempotent.decorator.ts             # A custom decorator to apply interceptor
+│   ├── idempotency.interceptor.ts          # NestJs interceptor to handle idempotency keys.
+│   └── redis-idempotency.service.ts        # Redis implementation for IIdempotencyService
+├── infrastructure.module.ts                # Root module that aggregates all infrastructure providers.
+├── metric                                  # Implementation for application monitoring and metrics (e.g., Prometheus).
+│   ├── metric-security.interceptor.ts
+│   ├── metric.controller.ts
+│   ├── metric.interceptor.ts
+│   ├── metric.module.ts
+│   └── metric.service.ts
+├── persistence                             # Implementation for data persistence.
+│   ├── persistence.module.ts               # Configures the ORM and provides repository implementations.
+│   ├── seed                                # Database seeding scripts (factories, script).
+│   └── typeorm                             # TypeOrm-specific code (schema, repositories, migrations, etc)
+└── redis                                   # Low-level Redis client configuration and module.
+    ├── redis.constant.ts
+    └── redis.module.ts
+```
 
-* **`presentation`** (`server/src/presentation`): This layer is responsible for presenting data to the user and handling user input.
-    * **REST Controllers**: Expose API endpoints (e.g., `AuthController`, `ProductController`).
-    * **Request/Response DTOs**: Define the structure of data for API requests and responses.
+```
+/presentation
+├── presentation.module.ts                  # Root module for the presentation layer
+└── rest                                    # All components related to the REST API.
+    ├── auth                                # API components for the Auth resource.
+    │   ├── auth.module.ts
+    │   ├── controller
+    │   ├── dto
+    │   └── shared
+    ├── cart                                # API components for the Cart resource.
+    │   ├── cart.module.ts
+    │   ├── controller
+    │   └── dto
+    ├── order                               # API components for the Order resource.
+    │   ├── controller
+    │   ├── dto
+    │   └── order.module.ts
+    ├── payment                             # API components for the Payment resource.
+    │   ├── controller
+    │   ├── dto
+    │   └── rest-payment.module.ts
+    ├── product                             # API components for the Product resource.
+    │   ├── controller
+    │   ├── dto
+    │   └── product.module.ts
+    ├── rest.module.ts                      # Aggregates all REST-related feature modules (Auth, Order, etc.).
+    └── shared                              # Components shared across different REST resources.
+        └── dto
+```
 
-### Supporting Infrastructure
+## 5. Getting Started
 
-* **`docker-compose.yml`**: Defines and configures the services required for the application environment, including Postgres, Redis, Prometheus, and Grafana.
-* **`docs`**: Contains architecture diagrams (PlantUML, Excalidraw) and other documentation.
-* **`gateway`**: Nginx configuration for reverse proxy and load balancing.
-* **`grafana`**: Configuration for Grafana dashboards for visualizing metrics.
-* **`prometheus`**: Configuration for the Prometheus monitoring system.
-* **`postgres`**: Initialization scripts for the PostgreSQL database.
-* **`server/bench`**: Contains benchmarking scripts and results (e.g., `order-process.js`) used for performance testing.
+### 5.1 Running the project
 
----
+#### Prerequisites
 
-## 🔒 Concurrency Control (CCU)
+Before you begin, ensure you have the following installed in your system:
 
-Handling concurrent user requests effectively is crucial for an e-commerce platform. This project addresses CCU challenges through several mechanisms:
+- Docker: Download and install from official [Docker website](https://docker.com), Make sure Docker daemon is running.
+- Docker compose: This is included in this most modern Docker installation.
 
-* **Optimistic/Pessimistic Locking**: While not explicitly detailed in the structure, the use of a robust ORM like TypeORM allows for implementing these strategies at the database entity level if needed.
-* **Distributed Locks**: A Redis-based distributed lock (`RedisDistributedLockService`) is implemented to ensure that critical sections of code, especially those involving shared resources or complex state changes (e.g., inventory updates during order placement), are executed by only one process at a time across multiple instances of the application. The interface for this is defined in `server/src/core/application/port/distributed-lock.interface.ts`.
-* **Idempotency**: To prevent issues from duplicate requests (e.g., due to network retries), an idempotency mechanism (`RedisIdempotencyService`, `IdempotentDecorator`) is in place. This ensures that operations can be safely retried without causing unintended side effects, crucial for payment processing and order creation. The interface is defined in `server/src/core/application/port/idempotency.interface.ts`.
-* **Unit of Work (UoW)**: The `UnitOfWorkInterface` and its TypeORM implementation (`TypeOrmUnitOfWork`) ensure that operations involving multiple domain objects or database changes are atomic. This means either all changes are committed successfully, or none are, maintaining data consistency.
-* **Domain Events & Sagas**: For complex, multi-step processes (e.g., order fulfillment), domain events and sagas (`OrderProcessingSaga`) are used to manage the workflow in an eventually consistent manner, reducing the scope and duration of locks.
+#### Step 1: Start the Application Services
 
----
-
-## 📊 Monitoring and Bottleneck Identification
-
-Continuous monitoring is essential for maintaining performance and identifying bottlenecks. This project integrates:
-
-* **Prometheus**: A powerful open-source monitoring and alerting toolkit. It's configured via `prometheus/prometheus.yml` to scrape metrics from the application.
-* **Grafana**: Used for visualizing the metrics collected by Prometheus. Pre-configured dashboards (`nestjs_app_dashboard.json`, `nestjs_shopping_app_dashboard.json`) provide insights into application performance, request rates, error rates, and resource usage. Grafana is set up to use Prometheus as a data source via `grafana/provisioning/datasources/prometheus.yml`.
-* **Custom Application Metrics**: The `server/src/infrastructure/metric` module provides a dedicated `MetricController` to expose custom application metrics (e.g., business-specific KPIs, queue lengths) that Prometheus can scrape.
-    * `MetricInterceptor`: Collects standard request/response metrics.
-    * `MetricService`: Provides functionalities for registering and updating custom metrics.
-* **Benchmarking**: The `server/bench` directory contains scripts (e.g., `order-process.js`) and past results (e.g., `order-process_*.png`) for performance testing critical user flows like order processing. This helps proactively identify performance regressions and bottlenecks under load.
-* **Logging**: (Implied) NestJS's built-in logging, potentially enhanced with custom loggers, would be used for detailed tracing and error analysis.
-
-By analyzing metrics from Prometheus in Grafana dashboards and conducting regular benchmarking, we can effectively identify performance bottlenecks, understand system behavior under load, and ensure the application remains responsive and reliable.
-
----
-
-## 🚀 Getting Started
-
-*(Add instructions on how to set up the development environment, install dependencies, and configure necessary services like databases, Redis, etc.)*
-
-```sh
-# Run in development mode
+```
 docker compose up -d
+```
 
+#### Step 2: Run Database Migration
+
+```
+docker exec -it shopping_app_server npm run migration:run
+```
+
+#### Step 3: Seed the Database
+
+```
+docker exec -it shopping_app_server npm run db:seed  
+```
+
+#### Accessing the Services
+
+Once the setup is complete, you can access the running services at the following local addresses:
+
+- **Api document (Swagger UI):**
+  - URL: [http://localhost:3000/api-docs](http://localhost:3000/api-docs).
+  - Explore and interact with the available API endpoints here.
+- **Default User Account:**
+  - Username: <test@example.com>
+  - Password: password123
+- **Monitoring Dashboard (Grafana):**
+  - URL: [http://localhost:3001/dashboards](http://localhost:3001/dashboards)
+  - View application metrics and performance dashboards.
+
+#### Additional commands
+
+Here are some useful commands for managing application environment:
+
+- **To Stop the application services:**
+
+  ```
+  docker compose down
+  ```
+
+- **To view the log of specific service:**
+
+  ```
+  docker logs shopping_app_server -f
+  ```
+
+- **To access the specific service:**
+
+  ```
+  docker exec -it shopping_app_server sh
+  ```
+
+### 5.2 Features
+
+#### Filtering
+
+To do filter, we use LHS Brackets:
+
+LHS is a way to encode operators by using square brackets `[]` on the key name.
+
+For example:
+
+```
+curl -X 'GET' \
+  'http://localhost:3000/api/v1/products?filter[price][gte]=1000' \
+  -H 'accept: application/json'
+```
+
+This example indicates filtering out product which prices are greater or equals to 1000.
+
+All supported operators:
+
+| Operator  | Description |
+| --------- | -------------------------------------- |
+| eq        | Equals (=)                             |
+| neq       | Not equals (!=)                        |
+| gt        | Greater than (>)                       |
+| lt        | Less than (<)                          |
+| lte       | Less than or equals to                 |
+| like      | LIKE (case-sensitive)                  |
+| ilike     | ILIKE (case-insensitive)               |
+| in        | IN (comma-separated values for arrays) |
+| isNull    | IS NULL                                |
+| isNotNull | IS NOT NULL                            |
+
+I designed this filter based on <ins>[Strapi filter](https://docs.strapi.io/cms/api/rest/filters)</ins>
+
+Here is the code to apply filter
+
+```
+this.queryBuilderService.buildQuery<ProductSchema>(
+        this.ormRepository,
+        { ...criteria, pagination },
+        {
+          alias: 'product',
+          allowedFilters: ['uuid', 'name', 'price'],
+          allowedSorts: ['name', 'uuid', 'createdAt'],
+          defaultSort: [{ field: 'createdAt', direction: 'DESC' }],
+        },
+);
+```
+
+#### Pagination
+
+This project supports both offset and cursor pagination
+
+For example:
+
+```
+// Offset pagination
+
+curl -X 'GET' \
+  'http://localhost:3000/api/v1/products?page=1&limit=20 \
+  -H 'accept: application/json'
+```
+
+```
+// Result
+{
+  "data": [
+    {
+      "id": "11f54516-3d0b-4a22-95aa-8959619ba902",
+      "name": "Oriental Plastic Keyboard",
+      "price": "$68,935.00"
+    },
+    {
+      "id": "16f1e226-8d17-4b03-a828-97fe8e2e9b2d",
+      "name": "Unbranded Granite Keyboard",
+      "price": "$507,432.00"
+    },
+    ...
+  ],
+  "total": 60,
+  "page": "1",
+  "limit": 20,
+  "totalPages": 3
+}
+
+```
+
+```
+// Cursor pagination
+
+curl -X 'GET' \
+  'http://localhost:3000/api/v1/cart?limit=5' \
+  -H 'accept: application/json'
+```
+
+
+```
+// Result
+
+{
+  "id": "822d9e66-2d2b-4487-84a4-5718d899b45b",
+  "cartItems": [
+    {
+      "productId": "16f1e226-8d17-4b03-a828-97fe8e2e9b2d",
+      "quantity": 3,
+      "unitPrice": 507432
+    },
+    {
+      "productId": "a410451d-6cdb-4459-bc1c-ba790672e314",
+      "quantity": 3,
+      "unitPrice": 124345
+    },
+    ...
+  ],
+  "totalPrice": 4159788,
+  "pagination": {
+    "limit": "5",
+    "nextCursor": "eyJ1dWlkIjoiNGE5YmM1MmMtYmFjMS00YWYwLTllMTUtNDQzZjMyNjAxNGRmIn0",
+    "previousCursor": null,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+
+```
+
+#### Caching
+
+Implemented using Redis as a cache backend.  
+See: [`redis-cache.service.ts`](./server/src/infrastructure/cache/redis-cache.service.ts)
+
+#### Distributed lock
+
+Implemented with Redis to ensure safe concurrent operations (e.g., inventory reservation).  
+See: [`redis-distributed-lock.service.ts`](./server/src/infrastructure/distributed-lock/redis-distributed-lock.service.ts)
+
+#### API Idempotence
+
+Implemented via a custom NestJS interceptor and Redis backend to prevent duplicate processing of requests.  
+See: [`idempotency.interceptor.ts`](./server/src/infrastructure/idempotency/idempotency.interceptor.ts)
+
+## 6. Technology Stack
+
+- Framework: NestJS.
+- Language: Typescript.
+- Architecture: Clean Architecture, Domain-Driven Design
+- Pattern: CQRS (`@nestjs/cqrs`), Saga (Orchestration), Repository Pattern, and Unit Of Work Pattern.
+- Persistence: TypeORM.
+- Database: Postgres, Redis.
+- Monitoring: Grafana. Prometheus.
+- API: REST.
