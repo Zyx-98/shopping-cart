@@ -405,3 +405,7 @@ See: [`idempotency.interceptor.ts`](./server/src/infrastructure/idempotency/idem
 - Database: Postgres, Redis.
 - Monitoring: Grafana. Prometheus.
 - API: REST.
+
+## 7. License
+
+This project is licensed with the [MIT license](LICENSE).
