@@ -6,6 +6,7 @@ import { RedisModule } from './redis/redis.module';
 import { IdempotencyModule } from './idempotency/idempotency.module';
 import { DistributedLockModule } from './distributed-lock/distributed-lock.module';
 import { MetricModule } from './metric/metric.module';
+import { LoggerModule } from './logging/logger.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MetricModule } from './metric/metric.module';
     IdempotencyModule,
     DistributedLockModule,
     MetricModule,
+    LoggerModule,
   ],
   exports: [
     PersistenceModule,

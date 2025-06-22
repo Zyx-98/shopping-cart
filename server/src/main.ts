@@ -9,6 +9,7 @@ import {
 } from '@nestjs/platform-fastify';
 import * as qs from 'qs';
 import { join } from 'path';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { IdempotencyInterceptor } from './infrastructure/idempotency/itempotency.interceptor';
 import { MetricService } from './infrastructure/metric/metric.service';
 import { MetricInterceptor } from './infrastructure/metric/metric.interceptor';
@@ -20,6 +21,8 @@ async function bootstrap() {
       querystringParser: (str) => qs.parse(str),
     }),
   );
+
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   const metricService = app.get(MetricService);
   app.useGlobalInterceptors(new MetricInterceptor(metricService));
