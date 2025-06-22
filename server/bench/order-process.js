@@ -5,15 +5,44 @@ import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 const BASE_URL = 'http://localhost:3000';
 const ORDER_ENDPOINT = '/api/v1/orders';
 
-const token =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYjBmZDI0NC00N2M4LTRkMDItYTY3NC04YWIwZmNjNmFkNDkiLCJjdXN0b21lcklkIjoiNTZlN2VlM2QtZjlkMC00NjU2LWFlMjgtYTgyYzQ1YTgzZDdiIiwiaWF0IjoxNzQ4ODY1OTg2LCJleHAiOjE3NDg5MDkxODZ9.2lVrlDVXw66_18pDtavPY23gibzIMGZBQHroQJEdTxk';
+export function setup() {
+  const loginRes = http.post(
+    `${BASE_URL}/api/v1/auth/login`,
+    JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+    { headers: { 'content-type': 'application/json' } },
+  );
+  const token = loginRes.json().accessToken;
+
+  const productsResponse = http.get(
+    `${BASE_URL}/api/v1/products?page=1&limit=30`,
+  );
+  const products = productsResponse.json().data;
+
+  return { token, products };
+}
+
+const getRandomProducts = (products) => {
+  const min = 1;
+  const max = 5;
+
+  const randomCount = Math.floor(Math.random() * (max - min + 1)) + min;
+  const randomProducts = [];
+  const productIds = products.map((product) => product.id);
+  for (let i = 0; i < randomCount; i++) {
+    const randomIndex = Math.floor(Math.random() * productIds.length);
+    const productId = productIds[randomIndex];
+    const quantity = Math.floor(Math.random() * 10) + 1; // Random quantity between 1 and 10
+    randomProducts.push({ productId, quantity });
+  }
+
+  return randomProducts;
+};
 
 export const options = {
   stages: [
-    { duration: '2m', target: 50 }, 
-    { duration: '5m', target: 100 },
-    { duration: '10m', target: 100 },
-    { duration: '2m', target: 0 },
+    { duration: '30s', target: 50 }, // Ramp up to 50 VUs in 30 seconds
+    { duration: '4m', target: 50 }, // Stay at 50 VUs for 4 minutes
+    { duration: '30s', target: 0 }, // Ramp down to 0 VUs in 30 seconds
   ],
   noConnectionReuse: false,
   thresholds: {
@@ -22,24 +51,12 @@ export const options = {
   },
 };
 
-export default function () {
+export default function (data) {
   const idempotencyKey = uuidv4();
+  const { token, products } = data;
 
   const requestBody = {
-    selectedProducts: [
-      {
-        productId: '9be551a8-d94f-4b53-ba03-210da5ba8164',
-        quantity: 25,
-      },
-      {
-        productId: '0c33ed4a-88e5-44dd-86fc-0e9c12b5f704',
-        quantity: 15,
-      },
-      {
-        productId: '8cbb0ecf-6727-4b31-b39b-20c9f93be464',
-        quantity: 20,
-      },
-    ],
+    selectedProducts: getRandomProducts(products),
   };
 
   const headers = {
