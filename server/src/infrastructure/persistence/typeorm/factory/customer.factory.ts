@@ -20,7 +20,7 @@ export class CustomerFactory extends Factory<CustomerSchema> {
       uuid: v4(),
       email: faker.internet.email(),
       address: faker.location.streetAddress(),
-      phone: faker.phone.number({ style: 'human' }),
+      phone: faker.phone.number({ style: 'national' }),
       user: new EagerInstanceAttribute(
         (instance) => new SingleSubfactory(UserFactory, { customer: instance }),
       ),
