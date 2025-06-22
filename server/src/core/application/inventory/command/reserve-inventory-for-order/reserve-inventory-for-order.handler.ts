@@ -1,6 +1,11 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { ReserveInventoryForOrderCommand } from './reserve-inventory-for-order.command';
-import { Inject, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Logger,
+  NotFoundException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { OrderInventoryReservationFailedEvent } from '../../event/order-inventory-reservation-failed.event';
 import { OrderInventoryReservedEvent } from '../../event/order-inventory-reserved.event';
 import {
@@ -13,7 +18,6 @@ import {
 } from 'src/core/domain/port/unit-of-work.interface';
 import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
-import { InsufficientInventoryAvailableException } from 'src/core/domain/inventory/exception/insufficient-inventory-available.aggregate';
 
 @CommandHandler(ReserveInventoryForOrderCommand)
 export class ReserveInventoryForOrderHandler
@@ -21,9 +25,9 @@ export class ReserveInventoryForOrderHandler
 {
   private readonly logger = new Logger(ReserveInventoryForOrderHandler.name);
 
-  private readonly LOCK_TIMEOUT_MS = 5000;
+  private readonly LOCK_TIMEOUT_MS = 2000;
   private readonly RETRY_ATTEMPTS = 3;
-  private readonly RETRY_DELAY_MS = 200;
+  private readonly RETRY_DELAY_MS = 500;
 
   constructor(
     @Inject(UNIT_OF_WORK)
@@ -35,112 +39,118 @@ export class ReserveInventoryForOrderHandler
 
   async execute(command: ReserveInventoryForOrderCommand): Promise<void> {
     const { orderId, orderLines } = command;
-    const acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
-    await this.unitOfWork.beginTransaction();
-
-    this.logger.log(
-      `Reserving inventory for order with ID ${orderId.toValue()}`,
+    let acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
+    const lockNames = orderLines.map(
+      (orderLine) => `product_lock:${orderLine.productId.toString()}`,
     );
 
-    const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
-
-    const sagaInstance =
-      await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
-        orderId,
-      );
-
-    if (!sagaInstance) {
-      throw new NotFoundException(
-        `Cannot reserve inventory: No saga instance found for orderId: ${orderId.toValue()} `,
-      );
-    }
-
     try {
-      const inventories = await inventoryRepository.findAllByProductId(
-        orderLines.map((line) => line.productId),
-      );
-
-      for (const inventory of inventories) {
-        this.logger.warn(
-          `Reserving inventory for product: ${inventory.productId.toString()}`,
-        );
-
-        const lockName = `inventory_lock:${inventory.id.toString()}`;
-
-        const lockId = await this.distributedLockService.acquire(
+      const lockPromises = lockNames.map((lockName) =>
+        this.distributedLockService.acquire(
           lockName,
           this.LOCK_TIMEOUT_MS,
           this.RETRY_ATTEMPTS,
           this.RETRY_DELAY_MS,
+        ),
+      );
+
+      const lockIds = await Promise.all(lockPromises);
+
+      if (lockIds.some((lockId) => !lockId)) {
+        acquiredLocks = lockIds.filter(Boolean).map((lockId, index) => ({
+          lockId: lockId!,
+          lockName: lockNames[index],
+        }));
+
+        this.logger.error(`Failed to acquire lock for inventory`);
+
+        throw new PreconditionFailedException(
+          `Failed to acquire lock for inventory`,
         );
-
-        if (!lockId) {
-          this.logger.error(
-            `Failed to acquire lock for inventory: ${inventory.id.toString()}`,
-          );
-          for (const acquiredLock of acquiredLocks) {
-            await this.distributedLockService.release(
-              acquiredLock.lockName,
-              acquiredLock.lockId,
-            );
-          }
-
-          sagaInstance.advanceStep(
-            OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,
-          );
-
-          await sagaInstanceRepository.persist(sagaInstance);
-
-          this.eventBus.publish(
-            new OrderInventoryReservationFailedEvent(orderId),
-          );
-
-          await this.unitOfWork.commitTransaction();
-
-          return;
-        }
-
-        acquiredLocks.push({
-          lockName,
-          lockId,
-        });
-
-        const orderLine = orderLines.find((line) =>
-          line.productId.equals(inventory.productId),
-        );
-
-        if (orderLine) {
-          this.logger.warn(
-            `Reserving ${orderLine.quantity.value} units of inventory for product: ${inventory.productId.toString()}`,
-          );
-          inventory.removeQuantity(orderLine.quantity);
-        }
       }
 
-      await inventoryRepository.persistMany(inventories);
+      acquiredLocks = lockIds.map((lockId, index) => ({
+        lockId: lockId!,
+        lockName: lockNames[index],
+      }));
 
-      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_RESERVED);
+      await this.unitOfWork.execute(async () => {
+        const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
 
-      await sagaInstanceRepository.persist(sagaInstance);
+        const sagaInstance =
+          await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+            orderId,
+          );
 
-      await this.unitOfWork.commitTransaction();
-      this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
+        if (!sagaInstance) {
+          throw new NotFoundException(
+            `Cannot reserve inventory: No saga instance found for orderId: ${orderId.toValue()} `,
+          );
+        }
+
+        const inventories = await inventoryRepository.findAllByProductId(
+          orderLines.map((line) => line.productId),
+        );
+
+        for (const inventory of inventories) {
+          this.logger.log(
+            `Reserving inventory for product: ${inventory.productId.toString()}`,
+          );
+
+          const orderLine = orderLines.find((line) =>
+            line.productId.equals(inventory.productId),
+          );
+
+          if (orderLine) {
+            this.logger.log(
+              `Reserving ${orderLine.quantity.value} units of inventory for product: ${inventory.productId.toString()}`,
+            );
+
+            inventory.removeQuantity(orderLine.quantity);
+          }
+        }
+
+        await inventoryRepository.persistMany(inventories);
+
+        sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_RESERVED);
+
+        await sagaInstanceRepository.persist(sagaInstance);
+
+        this.logger.log(
+          `Inventory reservation successful for order ID: ${orderId.toValue()}`,
+        );
+        this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
+      });
     } catch (error) {
       this.logger.error(
         `Failed to reserve inventory for order with ID ${orderId.toValue()}`,
       );
-      if (error instanceof InsufficientInventoryAvailableException) {
-        sagaInstance.advanceStep(
-          OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,
-        );
-        await sagaInstanceRepository.persist(sagaInstance);
-        this.eventBus.publish(
-          new OrderInventoryReservationFailedEvent(orderId),
-        );
 
-        await this.unitOfWork.commitTransaction();
-      } else {
-        await this.unitOfWork.rollbackTransaction();
+      await this.unitOfWork.execute(async () => {
+        const { sagaInstanceRepository } = this.unitOfWork;
+
+        const sagaInstance =
+          await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+            orderId,
+          );
+
+        if (sagaInstance) {
+          sagaInstance.advanceStep(
+            OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,
+          );
+          await sagaInstanceRepository.persist(sagaInstance);
+        }
+      });
+
+      this.eventBus.publish(new OrderInventoryReservationFailedEvent(orderId));
+
+      throw error;
+    } finally {
+      for (const acquiredLock of acquiredLocks) {
+        await this.distributedLockService.release(
+          acquiredLock.lockName,
+          acquiredLock.lockId,
+        );
       }
     }
   }
