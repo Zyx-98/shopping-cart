@@ -50,7 +50,7 @@ This project is a personal shopping cart web application. It is inspired by conc
 
 ### 3.2 Monitoring
 
-![Monitoring](/docs/monitoring2.png)
+![Monitoring](/docs/monitoring.png)
 
 ## 4. Structure Overview
 
