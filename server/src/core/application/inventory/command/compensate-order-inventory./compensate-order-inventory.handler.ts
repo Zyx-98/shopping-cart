@@ -30,75 +30,76 @@ export class CompensateOrderInventoryHandler
 
   async execute(command: CompensateOrderInventoryCommand): Promise<void> {
     const { orderId, products } = command;
-    const acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
+    let acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
+    const lockNames = products.map(
+      (product) => `compensate_inventory_lock:${product?.productId.toString()}`,
+    );
 
-    // TODO need to implement a distributed lock to ensure inventory updates are safe and consistent in concurrent scenarios.
-    await this.unitOfWork.execute(async () => {
-      const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
+    const lockPromises = lockNames.map((lockName) =>
+      this.distributedLockService.acquire(
+        lockName,
+        this.LOCK_TIMEOUT_MS,
+        this.RETRY_ATTEMPTS,
+        this.RETRY_DELAY_MS,
+      ),
+    );
 
-      const sagaInstance =
-        await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
-          orderId,
-        );
+    const lockIds = await Promise.all(lockPromises);
 
-      if (!sagaInstance) {
-        throw new NotFoundException(
-          `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
-        );
-      }
+    if (lockIds.some((lockId) => !lockId)) {
+      acquiredLocks = lockIds.filter(Boolean).map((lockId, index) => ({
+        lockId: lockId!,
+        lockName: lockNames[index],
+      }));
+    } else {
+      acquiredLocks = lockIds.map((lockId, index) => ({
+        lockId: lockId!,
+        lockName: lockNames[index],
+      }));
 
-      for (const product of products) {
-        const lockName = `compensate_inventory_lock:${product?.productId.toString()}`;
+      await this.unitOfWork.execute(async () => {
+        const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
 
-        const lockId = await this.distributedLockService.acquire(
-          lockName,
-          this.LOCK_TIMEOUT_MS,
-          this.RETRY_ATTEMPTS,
-          this.RETRY_DELAY_MS,
-        );
-
-        if (!lockId) {
-          this.logger.error(
-            `Failed to acquire lock for product: ${product?.productId.toString()}`,
+        const sagaInstance =
+          await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+            orderId,
           );
 
-          for (const acquiredLock of acquiredLocks) {
-            await this.distributedLockService.release(
-              acquiredLock.lockName,
-              acquiredLock.lockId,
+        if (!sagaInstance) {
+          throw new NotFoundException(
+            `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
+          );
+        }
+
+        for (const product of products) {
+          const inventory = await inventoryRepository.findByUniqueId(
+            product?.productId,
+          );
+
+          if (!inventory) {
+            this.logger.error(
+              `Inventory not found for product: ${product?.productId.toString()}`,
+            );
+            throw new NotFoundException(
+              `Inventory not found for product: ${product?.productId.toString()}`,
             );
           }
 
-          throw new Error(
-            `Failed to acquire lock for product: ${product?.productId.toString()}`,
-          );
+          inventory.addQuantity(product.quantity);
+
+          await inventoryRepository.persist(inventory);
         }
 
-        acquiredLocks.push({
-          lockName,
-          lockId,
-        });
+        sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
+        await sagaInstanceRepository.persist(sagaInstance);
+      });
+    }
 
-        const inventory = await inventoryRepository.findByUniqueId(
-          product?.productId,
-        );
-
-        if (!inventory) {
-          this.logger.error(
-            `Inventory not found for product: ${product?.productId.toString()}`,
-          );
-          throw new NotFoundException(
-            `Inventory not found for product: ${product?.productId.toString()}`,
-          );
-        }
-
-        inventory.addQuantity(product.quantity);
-
-        await inventoryRepository.persist(inventory);
-      }
-
-      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
-      await sagaInstanceRepository.persist(sagaInstance);
-    });
+    for (const acquiredLock of acquiredLocks) {
+      await this.distributedLockService.release(
+        acquiredLock.lockName,
+        acquiredLock.lockId,
+      );
+    }
   }
 }
