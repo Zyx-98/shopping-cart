@@ -126,4 +126,52 @@ export class RedisDistributedLockService implements IDistributedLockService {
       return false;
     }
   }
+
+  async releaseMultiple(
+    lockNames: string[],
+    lockIds: string[],
+  ): Promise<boolean> {
+    if (lockNames.length !== lockIds.length) {
+      this.logger.error(
+        'Mismatched number of lock names and IDs provided for release.',
+      );
+      return false;
+    }
+
+    const script = `
+        for i = 1, #KEYS do
+            if redis.call("GET", KEYS[i]) == ARGV[i] then
+                redis.call("DEL", KEYS[i])
+            end
+        end
+        return 1
+    `;
+
+    try {
+      const keys = lockNames.map((name) => this.getKey(name));
+      const result = await this.redisClient.eval(
+        script,
+        keys.length,
+        ...keys,
+        ...lockIds,
+      );
+      const released = result === 1;
+      if (released) {
+        this.logger.debug(
+          `Successfully released multiple locks: ${lockNames.join(', ')}`,
+        );
+      } else {
+        this.logger.warn(
+          `Failed to release some locks. They may have expired or been acquired by another process.`,
+        );
+      }
+      return released;
+    } catch (error) {
+      this.logger.error(
+        `Error releasing multiple locks: ${error.message}`,
+        error.stack,
+      );
+      return false;
+    }
+  }
 }

@@ -6,6 +6,7 @@ export interface IDistributedLockService {
     retryDelayMs?: number,
   ): Promise<string | null>;
   release(lockName: string, lockId: string): Promise<boolean>;
+  releaseMultiple(lockNames: string[], lockIds: string[]): Promise<boolean>;
 }
 
 export const DISTRIBUTED_LOCK_SERVICE = Symbol('IDistributedLockService');
