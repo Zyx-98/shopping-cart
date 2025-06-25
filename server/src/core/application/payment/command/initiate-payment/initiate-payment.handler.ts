@@ -1,4 +1,4 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { InitiatePaymentCommand } from './initiate-payment.command';
 import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import { PaymentAggregate } from 'src/core/domain/payment/aggregate/payment.aggregate';
@@ -8,6 +8,7 @@ import {
 } from 'src/core/domain/port/unit-of-work.interface';
 import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
+import { PaymentInitiatedForOrderEvent } from '../../event/payment-initiated-for-order.event';
 
 @CommandHandler(InitiatePaymentCommand)
 export class InitiatePaymentHandler
@@ -18,15 +19,25 @@ export class InitiatePaymentHandler
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: InitiatePaymentCommand): Promise<any> {
-    const { orderId, totalItemPrice } = command;
+    const { orderId } = command;
 
     await this.unitOfWork.execute(async () => {
-      const { paymentRepository, sagaInstanceRepository } = this.unitOfWork;
+      const { orderRepository, paymentRepository, sagaInstanceRepository } =
+        this.unitOfWork;
 
-      const payment = PaymentAggregate.create(orderId, totalItemPrice);
+      const order = await orderRepository.findById(orderId);
+
+      if (!order) {
+        throw new NotFoundException(
+          `Order with ID ${orderId.toString()} not found`,
+        );
+      }
+
+      const payment = PaymentAggregate.create(orderId, order.getTotalPrice());
 
       const sagaInstance =
         await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
@@ -52,10 +63,12 @@ export class InitiatePaymentHandler
       );
 
       await sagaInstanceRepository.persist(sagaInstance);
-
-      this.logger.log(
-        `Payment initiated successfully for order ID ${orderId.toString()}`,
-      );
     });
+
+    this.logger.log(
+      `Payment initiated successfully for order ID ${orderId.toString()}`,
+    );
+
+    this.eventBus.publish(new PaymentInitiatedForOrderEvent(orderId));
   }
 }

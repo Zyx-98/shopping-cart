@@ -20,6 +20,9 @@ export class InventorySchema {
   @Column({ type: 'int' })
   stock: number;
 
+  @Column({ type: 'int', default: 1 })
+  version: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 

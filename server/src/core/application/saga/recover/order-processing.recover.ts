@@ -18,8 +18,6 @@ import {
   SAGA_INSTANCE_REPOSITORY,
 } from 'src/core/domain/saga/repository/saga-instance.repository';
 import { OrderInventoryReservedEvent } from '../../inventory/event/order-inventory-reserved.event';
-import { ReserveInventoryForOrderCommand } from '../../inventory/command/reserve-inventory-for-order/reserve-inventory-for-order.command';
-import { MarkOrderAwaitingPaymentCommand } from '../../order/command/mark-order-awaiting-payment/mark-order-awaiting-payment.command';
 import { OrderCanceledEvent } from 'src/core/domain/order/event/order-canceled.event';
 import {
   IPaymentRepository,
@@ -28,6 +26,7 @@ import {
 import { CancelPaymentForCanceledOrderCommand } from '../../payment/command/cancel-payment-for-canceled-order/cancel-payment-for-canceled-order.command';
 import { CancelOrderCommand } from '../../order/command/cancel-order/cancel-order.command';
 import { MarkOrderAsCompleteCommand } from '../../order/command/mark-order-as-complete/mark-order-as-complete.command';
+import { PaymentInitiatedForOrderEvent } from '../../payment/event/payment-initiated-for-order.event';
 
 @Injectable()
 export class OrderProcessingRecover implements OnApplicationBootstrap {
@@ -81,11 +80,13 @@ export class OrderProcessingRecover implements OnApplicationBootstrap {
           break;
         }
 
-        case OrderProcessingSagaStep.PAYMENT_CREATED: {
-          await this.commandBus.execute(
-            new ReserveInventoryForOrderCommand(order.id, order.orderLines),
-          );
+        case OrderProcessingSagaStep.INVENTORY_RESERVED: {
+          this.eventBus.publish(new OrderInventoryReservedEvent(order.id));
+          break;
+        }
 
+        case OrderProcessingSagaStep.PAYMENT_CREATED: {
+          this.eventBus.publish(new PaymentInitiatedForOrderEvent(order.id));
           break;
         }
 
@@ -95,14 +96,6 @@ export class OrderProcessingRecover implements OnApplicationBootstrap {
               OrderId.create(activeSaga.payload.orderId),
             ),
           );
-          break;
-        }
-
-        case OrderProcessingSagaStep.INVENTORY_RESERVED: {
-          await this.commandBus.execute(
-            new MarkOrderAwaitingPaymentCommand(order.id),
-          );
-
           break;
         }
 

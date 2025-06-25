@@ -5,6 +5,7 @@ import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 import { InventoryId } from 'src/core/domain/inventory/value-object/inventory-id.vo';
 import { DeepPartial } from 'typeorm';
+import { Version } from 'src/core/domain/shared/domain/value-object/version.vo';
 
 @Injectable()
 export class PersistenceInventoryMapper {
@@ -13,6 +14,7 @@ export class PersistenceInventoryMapper {
       id: InventoryId.create(schema.uuid),
       productId: ProductId.create(schema.productId),
       quantity: Quantity.create(schema.stock),
+      version: Version.create(schema.version || 1),
     });
   }
 
@@ -20,6 +22,7 @@ export class PersistenceInventoryMapper {
     return {
       uuid: aggregate.id.toValue(),
       stock: aggregate.quantity.value,
+      version: aggregate.version.value,
     };
   }
 }

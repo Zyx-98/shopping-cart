@@ -74,7 +74,7 @@ export default function (data) {
   );
 
   check(res, {
-    'status is 200 or 201': (r) => r.status === 200 || r.status === 201,
+    'status is 202': (r) => r.status === 202,
     'response body contains order ID': (r) =>
       r.json() && r.json().uuid !== undefined,
   });

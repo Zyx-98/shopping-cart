@@ -3,6 +3,7 @@ import { InventoryId } from '../value-object/inventory-id.vo';
 import { Quantity } from '../../shared/domain/value-object/quantity.vo';
 import { BaseAggregateRoot } from '../../shared/domain/aggregate/base-aggregate-root';
 import { InsufficientInventoryAvailableException } from '../exception/insufficient-inventory-available.aggregate';
+import { Version } from '../../shared/domain/value-object/version.vo';
 
 export interface InventoryProps {
   id: InventoryId;
@@ -10,6 +11,7 @@ export interface InventoryProps {
   quantity: Quantity;
   createAt?: Date | null;
   updatedAt?: Date | null;
+  version?: Version;
 }
 
 export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
@@ -17,6 +19,7 @@ export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
   private _quantity: Quantity;
   private _createdAt?: Date | null;
   private _updatedAt?: Date | null;
+  private _version: Version;
 
   private _available: Quantity = Quantity.create(0);
 
@@ -26,6 +29,7 @@ export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
     this._quantity = props.quantity;
     this._createdAt = props.createAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
+    this._version = props.version || Version.create(1);
   }
 
   public static create(
@@ -57,6 +61,14 @@ export class InventoryAggregate extends BaseAggregateRoot<InventoryId> {
 
   get updatedAt(): Date | null | undefined {
     return this._updatedAt;
+  }
+
+  get version(): Version {
+    return this._version;
+  }
+
+  public nextVersion(): void {
+    this._version = this._version.next();
   }
 
   public checkAvailability(quantity: Quantity): boolean {

@@ -7,6 +7,7 @@ export class CreateInventoriesTable1743329188285 implements MigrationInterface {
                 uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 product_id UUID NOT NULL,
                 stock INT NOT NULL DEFAULT 0,
+                version INT NOT NULL DEFAULT 1,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
             );

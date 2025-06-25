@@ -89,8 +89,8 @@ export class OrderController {
     description: 'Data required to place a new order',
   })
   @ApiResponse({
-    status: 201,
-    description: 'Order placed successfully',
+    status: 202,
+    description: 'Order status accepted for processing',
     type: PlaceOrderResponseDto,
   })
   @ApiResponse({
