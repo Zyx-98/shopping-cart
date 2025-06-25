@@ -7,6 +7,7 @@ import { IdempotencyModule } from './idempotency/idempotency.module';
 import { DistributedLockModule } from './distributed-lock/distributed-lock.module';
 import { MetricModule } from './metric/metric.module';
 import { LoggerModule } from './logging/logger.module';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { LoggerModule } from './logging/logger.module';
     DistributedLockModule,
     MetricModule,
     LoggerModule,
+    QueueModule,
   ],
   exports: [
     PersistenceModule,
@@ -26,6 +28,7 @@ import { LoggerModule } from './logging/logger.module';
     CacheModule,
     DistributedLockModule,
     MetricModule,
+    QueueModule,
   ],
 })
 export class InfrastructureModule {}
