@@ -21,10 +21,10 @@ This project is a personal shopping cart web application. It is inspired by conc
 ## 2. Key Feature & Business Logic
 
 - **End-to-End Order Processing Saga:** A complete, orchestrated saga handles the entire order lifecycle:
-  1. **Order Creation:** Creates the order record atomically with the saga initiation.
-  2. **Inventory Reservation:** Checks for and reserves stock before processing payment.
-  3. **Payment Processing:** Initialize payment after deducting stock from inventory.
-  4. **Order Completion:** Marks the order as complete after successful payment.
+  - **Order Creation:** Creates the order record atomically with the saga initiation.
+  - **Inventory Reservation:** Checks for and reserves stock before processing payment.
+  - **Payment Processing:** Initialize payment after deducting stock from inventory.
+  - **Order Completion:** Marks the order as complete after successful payment.
 - **Idempotent Rest API:**
   - The `POST \orders` endpoint (and other critical write endpoints) are idempotent.
   - Uses an `Idempotency-Key` header and a customer Nestjs interceptor with a Redis backend to prevent duplication orders or payments from client retries.
