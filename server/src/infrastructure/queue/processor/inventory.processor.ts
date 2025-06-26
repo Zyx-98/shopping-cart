@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Job } from 'bullmq';
+import { CompensateOrderInventoryCommand } from 'src/core/application/inventory/command/compensate-order-inventory./compensate-order-inventory.command';
 import { ReserveInventoryForOrderCommand } from 'src/core/application/inventory/command/reserve-inventory-for-order/reserve-inventory-for-order.command';
 import {
   QueueJobData,
@@ -34,6 +35,8 @@ export class InventoryProcessor extends WorkerHost {
     switch (job.name) {
       case QueueJobName.RESERVE_INVENTORY:
         return this.handleReserveInventory(job);
+      case QueueJobName.COMPENSATE_INVENTORY:
+        return this.handleCompensateInventory(job);
       default:
         break;
     }
@@ -53,6 +56,29 @@ export class InventoryProcessor extends WorkerHost {
 
     await this.commandBus.execute(
       new ReserveInventoryForOrderCommand(order.id, order.orderLines),
+    );
+  }
+
+  async handleCompensateInventory(
+    job: Job<QueueJobData[QueueJobName.COMPENSATE_INVENTORY]>,
+  ) {
+    const { orderId } = job.data;
+
+    const order = await this.orderRepository.findById(OrderId.create(orderId));
+
+    if (!order) {
+      this.logger.error(`Order with ID ${orderId} not found`);
+      throw new Error(`Order with ID ${orderId} not found`);
+    }
+
+    await this.commandBus.execute(
+      new CompensateOrderInventoryCommand(
+        order.id,
+        order.orderLines.map((line) => ({
+          productId: line.productId,
+          quantity: line.quantity,
+        })),
+      ),
     );
   }
 }

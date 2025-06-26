@@ -7,6 +7,7 @@ import {
 } from 'src/core/domain/port/unit-of-work.interface';
 import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
+import { PaymentState } from 'src/core/domain/payment/enum/payment-state.enum';
 
 @CommandHandler(CancelPaymentForCanceledOrderCommand)
 export class CancelPaymentForCanceledOrderHandler
@@ -30,7 +31,15 @@ export class CancelPaymentForCanceledOrderHandler
       const payment = await paymentRepository.findByOrderId(orderId);
 
       if (!payment) {
-        throw new Error(`Payment with OrderId ${orderId.toValue()} not found`);
+        this.logger.warn(`Payment with OrderId ${orderId.toValue()} not found`);
+        return;
+      }
+
+      if (payment.state === PaymentState.CANCELED) {
+        this.logger.warn(
+          `Payment with OrderId ${orderId.toValue()} is already canceled`,
+        );
+        return;
       }
 
       const sagaInstance =

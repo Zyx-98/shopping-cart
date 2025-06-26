@@ -6,6 +6,7 @@ import { OrderId } from '../../order/value-object/order-id.vo';
 import { OpenPaymentState } from '../state/open-payment.state';
 import { PaymentFailedEvent } from '../event/payment-failed.event';
 import { PaymentPaidEvent } from '../event/payment-paid.event';
+import { PaymentState } from '../enum/payment-state.enum';
 
 export interface PaymentProps {
   id: PaymentId;
@@ -50,7 +51,7 @@ export class PaymentAggregate extends BaseAggregateRoot<PaymentId> {
     return new PaymentAggregate(props);
   }
 
-  get state(): string {
+  get state(): PaymentState {
     return this._state.state;
   }
 

@@ -1,5 +1,10 @@
-import { Inject, Logger, NotFoundException } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import {
+  ConflictException,
+  Inject,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { CompensateOrderInventoryCommand } from './compensate-order-inventory.command';
 import {
   IUnitOfWork,
@@ -7,10 +12,9 @@ import {
 } from 'src/core/domain/port/unit-of-work.interface';
 import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
-import {
-  DISTRIBUTED_LOCK_SERVICE,
-  IDistributedLockService,
-} from 'src/core/application/port/distributed-lock.interface';
+import { InventoryId } from 'src/core/domain/inventory/value-object/inventory-id.vo';
+import { Version } from 'src/core/domain/shared/domain/value-object/version.vo';
+import { CompensatedInventoryForOrderEvent } from '../../event/compensated-inventory-for-order.event';
 
 @CommandHandler(CompensateOrderInventoryCommand)
 export class CompensateOrderInventoryHandler
@@ -18,88 +22,72 @@ export class CompensateOrderInventoryHandler
 {
   private readonly logger = new Logger(CompensateOrderInventoryHandler.name);
 
-  private readonly LOCK_TIMEOUT_MS = 5000;
-  private readonly RETRY_ATTEMPTS = 3;
-  private readonly RETRY_DELAY_MS = 200;
   constructor(
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
-    @Inject(DISTRIBUTED_LOCK_SERVICE)
-    private readonly distributedLockService: IDistributedLockService,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: CompensateOrderInventoryCommand): Promise<void> {
     const { orderId, products } = command;
-    let acquiredLocks: Array<{ lockId: string; lockName: string }> = [];
-    const lockNames = products.map(
-      (product) => `compensate_inventory_lock:${product?.productId.toString()}`,
-    );
 
-    const lockPromises = lockNames.map((lockName) =>
-      this.distributedLockService.acquire(
-        lockName,
-        this.LOCK_TIMEOUT_MS,
-        this.RETRY_ATTEMPTS,
-        this.RETRY_DELAY_MS,
-      ),
-    );
+    await this.unitOfWork.execute(async () => {
+      const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
 
-    const lockIds = await Promise.all(lockPromises);
+      const sagaInstance =
+        await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+          orderId,
+        );
 
-    if (lockIds.some((lockId) => !lockId)) {
-      acquiredLocks = lockIds.filter(Boolean).map((lockId, index) => ({
-        lockId: lockId!,
-        lockName: lockNames[index],
-      }));
-    } else {
-      acquiredLocks = lockIds.map((lockId, index) => ({
-        lockId: lockId!,
-        lockName: lockNames[index],
-      }));
+      if (!sagaInstance) {
+        throw new NotFoundException(
+          `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
+        );
+      }
 
-      await this.unitOfWork.execute(async () => {
-        const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
-
-        const sagaInstance =
-          await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
-            orderId,
-          );
-
-        if (!sagaInstance) {
-          throw new NotFoundException(
-            `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
-          );
-        }
-
-        for (const product of products) {
-          const inventory = await inventoryRepository.findByUniqueId(
-            product?.productId,
-          );
-
-          if (!inventory) {
-            this.logger.error(
-              `Inventory not found for product: ${product?.productId.toString()}`,
-            );
-            throw new NotFoundException(
-              `Inventory not found for product: ${product?.productId.toString()}`,
-            );
-          }
-
-          inventory.addQuantity(product.quantity);
-
-          await inventoryRepository.persist(inventory);
-        }
-
-        sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
-        await sagaInstanceRepository.persist(sagaInstance);
-      });
-    }
-
-    for (const acquiredLock of acquiredLocks) {
-      await this.distributedLockService.release(
-        acquiredLock.lockName,
-        acquiredLock.lockId,
+      const inventories = await inventoryRepository.findAllByProductId(
+        products.map((product) => product.productId),
       );
-    }
+
+      const versionMap = new Map<InventoryId, Version>();
+
+      for (const inventory of inventories) {
+        const product = products.find((product) =>
+          product.productId.equals(inventory.productId),
+        );
+
+        if (!product) {
+          this.logger.error(
+            `Product not found for inventory: ${inventory.productId.toString()}`,
+          );
+          throw new NotFoundException(
+            `Product not found for inventory: ${inventory.productId.toString()}`,
+          );
+        }
+
+        inventory.addQuantity(product.quantity);
+        versionMap.set(inventory.id, inventory.version);
+        inventory.nextVersion();
+      }
+
+      const updatedRows = await inventoryRepository.persistManyWithVersion(
+        inventories,
+        versionMap,
+      );
+
+      if (updatedRows !== inventories.length) {
+        this.logger.warn(
+          `Optimistic lock conflict for order ID: ${orderId.toValue()}. Will trigger retry.`,
+        );
+        throw new ConflictException(
+          'Inventory conflict detected. Please retry.',
+        );
+      }
+
+      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
+      await sagaInstanceRepository.persist(sagaInstance);
+    });
+
+    this.eventBus.publish(new CompensatedInventoryForOrderEvent(orderId));
   }
 }

@@ -4,10 +4,14 @@ export enum QueueType {
 
 export enum QueueJobName {
   RESERVE_INVENTORY = 'reserve-inventory',
+  COMPENSATE_INVENTORY = 'compensate-inventory',
 }
 
 export interface QueueJobData {
   [QueueJobName.RESERVE_INVENTORY]: {
+    orderId: string;
+  };
+  [QueueJobName.COMPENSATE_INVENTORY]: {
     orderId: string;
   };
 }

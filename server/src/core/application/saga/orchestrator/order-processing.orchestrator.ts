@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ofType, Saga } from '@nestjs/cqrs';
-import { concatMap, EMPTY, filter, map, Observable, of, tap } from 'rxjs';
+import { concatMap, filter, map, Observable, of, tap } from 'rxjs';
 import { InitiatePaymentCommand } from '../../payment/command/initiate-payment/initiate-payment.command';
 import { OrderCreatedEvent } from 'src/core/domain/order/event/order-created.event';
 import { OrderInventoryReservationFailedEvent } from '../../inventory/event/order-inventory-reservation-failed.event';
@@ -8,7 +8,6 @@ import { MarkOrderFailCommand } from '../../order/command/mark-order-fail/mark-o
 import { OrderInventoryReservedEvent } from '../../inventory/event/order-inventory-reserved.event';
 import { MarkOrderAwaitingPaymentCommand } from '../../order/command/mark-order-awaiting-payment/mark-order-awaiting-payment.command';
 import { OrderCanceledEvent } from 'src/core/domain/order/event/order-canceled.event';
-import { CompensateOrderInventoryCommand } from '../../inventory/command/compensate-order-inventory./compensate-order-inventory.command';
 import { CancelPaymentForCanceledOrderCommand } from '../../payment/command/cancel-payment-for-canceled-order/cancel-payment-for-canceled-order.command';
 import { PaymentFailedEvent } from 'src/core/domain/payment/event/payment-failed.event';
 import { CancelOrderCommand } from '../../order/command/cancel-order/cancel-order.command';
@@ -21,6 +20,7 @@ import {
   QueueJobName,
   QueueType,
 } from '../../port/queue.service';
+import { CompensatedInventoryForOrderEvent } from '../../inventory/event/compensated-inventory-for-order.event';
 
 @Injectable()
 export class OrderProcessingOrchestrator {
@@ -97,23 +97,28 @@ export class OrderProcessingOrchestrator {
   orderCanceled = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(OrderCanceledEvent),
-      concatMap((event) => {
-        return of(
-          new CompensateOrderInventoryCommand(event.orderId, event.orderLines),
-        ).pipe(
-          concatMap(() => {
-            if (event.paymentId) {
-              this.logger.log(
-                `Compensating inventory for canceled order ID: ${event.orderId.toString()}`,
-              );
-              return of(
-                new CancelPaymentForCanceledOrderCommand(event.orderId),
-              );
-            } else {
-              return EMPTY;
-            }
-          }),
+      tap((event) => {
+        this.queueService.addJob(
+          QueueType.INVENTORY,
+          QueueJobName.COMPENSATE_INVENTORY,
+          {
+            orderId: event.orderId.toString(),
+          },
         );
+      }),
+      map(() => ({ type: 'SAGA_STEP_QUEUED' })),
+      filter(() => false),
+    );
+  };
+
+  @Saga()
+  compensatedInventoryForOrder = (
+    events$: Observable<any>,
+  ): Observable<any> => {
+    return events$.pipe(
+      ofType(CompensatedInventoryForOrderEvent),
+      map((event) => {
+        return new CancelPaymentForCanceledOrderCommand(event.orderId);
       }),
     );
   };
