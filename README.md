@@ -50,7 +50,17 @@ This project is a personal shopping cart web application. It is inspired by conc
 
 ### 3.2 Monitoring
 
-![Monitoring](/docs/monitoring.png)
+#### 3.2.1 Application Monitoring
+
+![Application Monitoring](/docs/application_monitoring.png)
+
+#### 3.2.2 Postgres Database Monitoring
+
+![Database Monitoring](/docs/postgres_monitoring.png)
+
+#### 3.2.3 Redis Cache Monitoring
+
+![Redis Monitoring](/docs/redis_monitoring.png)
 
 ## 4. Structure Overview
 
@@ -273,7 +283,7 @@ This example indicates filtering out product which prices are greater or equals 
 
 All supported operators:
 
-| Operator  | Description |
+| Operator  | Description                            |
 | --------- | -------------------------------------- |
 | eq        | Equals (=)                             |
 | neq       | Not equals (!=)                        |
