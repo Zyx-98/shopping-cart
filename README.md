@@ -25,6 +25,10 @@ This project is a personal shopping cart web application. It is inspired by conc
   - **Inventory Reservation:** Checks for and reserves stock before processing payment.
   - **Payment Processing:** Initialize payment after deducting stock from inventory.
   - **Order Completion:** Marks the order as complete after successful payment.
+- **High-Throughput Inventory Management:**
+  - To solve the critical e-commerce problem of handling high-volume orders without overselling, the system's inventory management was significantly refactored.
+  - The initial approach using a pessimistic distributed lock was evolved into a more performant and scalable Optimistic Locking strategy. This architectural decision is a core feature of the project's design for resilience and scale.
+  - ️➡️ Read the full case study here: [Architectural Deep Dive: Scaling the Inventory Service](/case-study/scaling-inventory.md)
 - **Idempotent Rest API:**
   - The `POST \orders` endpoint (and other critical write endpoints) are idempotent.
   - Uses an `Idempotency-Key` header and a customer Nestjs interceptor with a Redis backend to prevent duplication orders or payments from client retries.
