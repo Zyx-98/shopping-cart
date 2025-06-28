@@ -6,8 +6,9 @@ import {
 import { PaginatedResult } from 'src/core/domain/shared/types/pagination.type';
 import { ProductDto } from '../../dto/product.dto';
 import { ProductMapper } from '../../mapper/product.mapper';
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { IQueryHandler, QueryBus, QueryHandler } from '@nestjs/cqrs';
 import { GetProductListQuery } from './get-product-list.query';
+import { GetInventoriesByProductIdsQuery } from 'src/core/application/inventory/query/get-inventories-by-product-ids/get-inventories-by-product-ids.query';
 
 @QueryHandler(GetProductListQuery)
 export class GetProductListHandler
@@ -17,6 +18,7 @@ export class GetProductListHandler
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
     private readonly mapper: ProductMapper,
+    private readonly queryBus: QueryBus,
   ) {}
 
   async execute(
@@ -29,11 +31,23 @@ export class GetProductListHandler
       pagination,
     );
 
+    const inventories = await this.queryBus.execute(
+      new GetInventoriesByProductIdsQuery(
+        paginatedResult.data.map((aggregate) => aggregate.id),
+      ),
+    );
+
+    const data = paginatedResult.data.map((aggregate) => {
+      const inventory = inventories.find(({ productId }) =>
+        productId.equals(aggregate.id),
+      );
+
+      return this.mapper.toDto(aggregate, inventory);
+    });
+
     return {
       ...paginatedResult,
-      data: paginatedResult.data.map((aggregate) =>
-        this.mapper.toDto(aggregate),
-      ),
+      data,
     };
   }
 }

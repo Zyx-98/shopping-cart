@@ -9,4 +9,7 @@ export class ProductDto {
 
   @ApiProperty()
   price: string;
+
+  @ApiProperty()
+  inventoryCount: number;
 }

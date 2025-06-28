@@ -10,18 +10,18 @@ import { ApplicationSagaModule } from './saga/application-saga.module';
 @Global()
 @Module({
   imports: [
-    ApplicationProductModule,
     ApplicationOrderModule,
     ApplicationInventoryModule,
+    ApplicationProductModule,
     ApplicationCartModule,
     ApplicationAuthModule,
     ApplicationPaymentModule,
     ApplicationSagaModule,
   ],
   exports: [
-    ApplicationProductModule,
     ApplicationOrderModule,
     ApplicationInventoryModule,
+    ApplicationProductModule,
     ApplicationCartModule,
     ApplicationAuthModule,
     ApplicationPaymentModule,
