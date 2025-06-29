@@ -8,7 +8,7 @@ import {
 } from '@jorgebodega/typeorm-factory';
 import { BcryptHashingService } from 'src/infrastructure/auth/services/bcrypt-hashing.service';
 import { faker } from '@faker-js/faker';
-import { v4 } from 'uuid';
+import { v7 } from 'uuid';
 import { CustomerFactory } from './customer.factory';
 
 export class UserFactory extends Factory<UserSchema> {
@@ -19,7 +19,7 @@ export class UserFactory extends Factory<UserSchema> {
     const name = faker.internet.displayName();
     const email = faker.internet.email();
     return {
-      uuid: v4(),
+      uuid: v7(),
       name,
       email,
       passwordHash: async () =>

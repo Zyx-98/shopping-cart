@@ -6,7 +6,7 @@ import {
 } from '@jorgebodega/typeorm-factory';
 import { CustomerSchema } from '../entities/customer.schema';
 import AppDataSource from 'data-source';
-import { v4 } from 'uuid';
+import { v7 } from 'uuid';
 import { faker } from '@faker-js/faker';
 import { UserFactory } from './user.factory';
 
@@ -17,7 +17,7 @@ export class CustomerFactory extends Factory<CustomerSchema> {
   protected attrs(): FactorizedAttrs<CustomerSchema> {
     return {
       name: faker.internet.displayName(),
-      uuid: v4(),
+      uuid: v7(),
       email: faker.internet.email(),
       address: faker.location.streetAddress(),
       phone: faker.phone.number({ style: 'national' }),

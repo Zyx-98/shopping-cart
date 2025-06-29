@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IDistributedLockService } from 'src/core/application/port/distributed-lock.interface';
 import Redis from 'ioredis';
-import { v4 } from 'uuid';
+import { v7 } from 'uuid';
 import { REDIS_CLIENT } from '../redis/redis.constant';
 
 const DISTRIBUTED_LOCK_KEY_PREFIX = 'lock:';
@@ -47,7 +47,7 @@ export class RedisDistributedLockService implements IDistributedLockService {
     retryAttempts: number = 0,
     retryDelayMs: number = 100,
   ): Promise<string | null> {
-    const lockId = v4();
+    const lockId = v7();
     const key = this.getKey(lockName);
     let currentDelay = retryDelayMs;
 

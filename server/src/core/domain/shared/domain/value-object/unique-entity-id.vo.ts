@@ -1,10 +1,10 @@
-import { v4 } from 'uuid';
+import { v7 } from 'uuid';
 
 export class UniqueEntityId {
   private readonly value: string;
 
   constructor(id?: string) {
-    this.value = id || v4();
+    this.value = id || v7();
   }
 
   public static create<T extends UniqueEntityId>(
