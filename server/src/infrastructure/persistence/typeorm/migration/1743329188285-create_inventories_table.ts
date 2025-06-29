@@ -12,6 +12,7 @@ export class CreateInventoriesTable1743329188285 implements MigrationInterface {
                 updated_at TIMESTAMP DEFAULT NOW()
             );
             CREATE INDEX IF NOT EXISTS idx_inventories_product_id ON inventories(product_id);
+            CREATE INDEX idx_inventories_id_version ON inventories (uuid, version);
         `);
   }
 
