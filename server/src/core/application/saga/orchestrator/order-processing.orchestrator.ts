@@ -21,6 +21,8 @@ import {
   QueueType,
 } from '../../port/queue.service';
 import { CompensatedInventoryForOrderEvent } from '../../inventory/event/compensated-inventory-for-order.event';
+import { ProductReservationSucceededForOrderEvent } from '../../inventory/event/product-reservation-succeeded-for-order.event';
+import { ReleasedProductReservationForOrderEvent } from '../../inventory/event/released-product-reservation-for-order.event';
 
 @Injectable()
 export class OrderProcessingOrchestrator {
@@ -38,15 +40,43 @@ export class OrderProcessingOrchestrator {
           `Reserving inventory for order ID: ${event.orderId.toString()}`,
         );
 
-        this.queueService.addJob(
+        void this.queueService.addJob(
           QueueType.INVENTORY,
-          QueueJobName.RESERVE_INVENTORY,
+          QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT,
           {
-            orderId: event.orderId.toString(),
+            orderId: event.orderId.toValue(),
+            orderLine: {
+              productId: event.orderLines[0].productId.toValue(),
+              quantity: event.orderLines[0].quantity.value,
+            },
           },
         );
       }),
       map(() => ({ type: 'SAGA_STEP_QUEUED' })),
+      filter(() => false),
+    );
+  };
+
+  @Saga()
+  productReserved = (events$: Observable<any>): Observable<any> => {
+    return events$.pipe(
+      ofType(ProductReservationSucceededForOrderEvent),
+      tap((event) => {
+        const { orderId, nextOrderLine } = event;
+
+        void this.queueService.addJob(
+          QueueType.INVENTORY,
+          QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT,
+          {
+            orderId: orderId.toValue(),
+            orderLine: {
+              productId: nextOrderLine.productId,
+              quantity: nextOrderLine.quantity,
+            },
+          },
+        );
+      }),
+      map(() => ({ type: 'SAGA_STEP_QUEUE' })),
       filter(() => false),
     );
   };
@@ -84,10 +114,25 @@ export class OrderProcessingOrchestrator {
   ): Observable<any> => {
     return events$.pipe(
       ofType(OrderInventoryReservationFailedEvent),
-      map((event) => {
-        this.logger.log(
-          `Handling inventory reservation failure for order ID: ${event.orderId.toString()}`,
+      tap((event) => {
+        void this.queueService.addJob(
+          QueueType.INVENTORY,
+          QueueJobName.RELEASE_PRODUCT_RESERVATION,
+          {
+            orderId: event.orderId.toString(),
+          },
         );
+      }),
+      map(() => ({ type: 'SAGA_STEP_QUEUED' })),
+      filter(() => false),
+    );
+  };
+
+  @Saga()
+  releasedProductReservation = (events$: Observable<any>): Observable<any> => {
+    return events$.pipe(
+      ofType(ReleasedProductReservationForOrderEvent),
+      map((event) => {
         return new MarkOrderFailCommand(event.orderId);
       }),
     );
@@ -98,7 +143,7 @@ export class OrderProcessingOrchestrator {
     return events$.pipe(
       ofType(OrderCanceledEvent),
       tap((event) => {
-        this.queueService.addJob(
+        void this.queueService.addJob(
           QueueType.INVENTORY,
           QueueJobName.COMPENSATE_INVENTORY,
           {

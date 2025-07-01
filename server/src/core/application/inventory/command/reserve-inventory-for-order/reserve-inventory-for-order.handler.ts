@@ -125,8 +125,6 @@ export class ReserveInventoryForOrderHandler
         this.eventBus.publish(
           new OrderInventoryReservationFailedEvent(orderId),
         );
-
-        return;
       }
 
       throw error;

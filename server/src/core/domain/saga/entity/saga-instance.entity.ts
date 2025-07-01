@@ -133,4 +133,53 @@ export class SagaInstance<T extends SagaType> {
     this._isCompensating = false;
     this._updatedAt = new Date();
   }
+
+  public markLineAsReserve(orderLine: {
+    productId: string;
+    quantity: number;
+  }): void {
+    if (this.sagaType !== SagaType.PLACE_ORDER) {
+      throw new Error(
+        `This method can only be called on PLACE_ORDER saga type`,
+      );
+    }
+
+    this._payload.reservedOrderLines.push(orderLine);
+  }
+
+  public getNextLineToReserve(): {
+    productId: string;
+    quantity: number;
+  } | null {
+    if (this.sagaType !== SagaType.PLACE_ORDER) {
+      throw new Error(
+        `This method can only be called on PLACE_ORDER saga type`,
+      );
+    }
+
+    const reservedProductIds = new Set(
+      this.payload.reservedOrderLines.map(({ productId }) => productId),
+    );
+
+    for (const orderLine of this.payload.orderLines) {
+      if (!reservedProductIds.has(orderLine.productId)) {
+        return orderLine;
+      }
+    }
+
+    return null;
+  }
+
+  public getSuccessFullyReservedOrderLines(): Array<{
+    productId: string;
+    quantity: number;
+  }> {
+    if (this.sagaType !== SagaType.PLACE_ORDER) {
+      throw new Error(
+        `This method can only be called on PLACE_ORDER saga type`,
+      );
+    }
+
+    return this.payload.reservedOrderLines;
+  }
 }
