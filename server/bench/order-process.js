@@ -38,6 +38,51 @@ const getRandomProducts = (products) => {
   return randomProducts;
 };
 
+const orderDetailPolling = (headers, uuid) => {
+  const maxAttempts = 10;
+  const intervalSec = 2;
+  let attempt = 0;
+  let pollingSuccessful = false;
+
+  if (!uuid) {
+    console.error('No order UUID provided for polling.');
+    return;
+  }
+
+  while (attempt < maxAttempts) {
+    const res = http.get(`${BASE_URL}${ORDER_ENDPOINT}/${uuid}`, { headers });
+
+    const httpOk = check(res, {
+      'status is 200': (r) => r.status === 200,
+    });
+
+    if (!httpOk) {
+      attempt++;
+      sleep(intervalSec);
+      continue;
+    }
+
+    const resBody = res.json();
+
+    const stateCheck = check(resBody, {
+      'order state is not pending': (r) =>
+        r.state === 'awaiting_payment' || r.state === 'failed',
+    });
+
+    if (stateCheck) {
+      pollingSuccessful = true;
+      break;
+    }
+
+    attempt++;
+    sleep(intervalSec);
+  }
+
+  check(pollingSuccessful, {
+    'order detail polling successful': (r) => r === true,
+  });
+};
+
 export const options = {
   stages: [
     { duration: '30s', target: 50 }, // Ramp up to 50 VUs in 30 seconds
@@ -69,7 +114,7 @@ export default function (data) {
     `${BASE_URL}${ORDER_ENDPOINT}`,
     JSON.stringify(requestBody),
     {
-      headers: headers,
+      headers,
     },
   );
 
@@ -78,6 +123,8 @@ export default function (data) {
     'response body contains order ID': (r) =>
       r.json() && r.json().uuid !== undefined,
   });
+
+  // orderDetailPolling(headers, res.json().uuid);
 
   sleep(1);
 }

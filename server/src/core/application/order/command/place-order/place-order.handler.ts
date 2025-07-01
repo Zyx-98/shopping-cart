@@ -69,6 +69,7 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
             productId: orderLine.productId.toValue(),
             quantity: orderLine.quantity.value,
           })),
+          reservedOrderLines: [],
           totalPrice: aggregate.getTotalPrice().amount,
           orderId: aggregate.id.toValue(),
         },

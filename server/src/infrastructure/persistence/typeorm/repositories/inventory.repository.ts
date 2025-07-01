@@ -92,12 +92,12 @@ export class InventoryRepository implements IInventoryRepository {
 
     return schema ? this.mapper.toDomain(schema) : null;
   }
-  async findByUniqueId<UId extends UniqueEntityId>(
-    uniqueId: UId,
+  async findByUniqueId<UId extends ProductId>(
+    productId: UId,
   ): Promise<InventoryAggregate | null> {
     const schema = await this.ormRepository.findOne({
       where: {
-        uuid: uniqueId.toValue(),
+        productId: productId.toValue(),
       },
     });
 

@@ -26,8 +26,8 @@ import { InventoryProcessor } from './processor/inventory.processor';
       defaultJobOptions: {
         attempts: 5,
         backoff: {
-          type: 'exponential',
-          delay: 1000,
+          type: 'fixed',
+          delay: 500,
         },
       },
     }),
