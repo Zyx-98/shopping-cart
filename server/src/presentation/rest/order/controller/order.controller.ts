@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -74,12 +75,13 @@ export class OrderController {
   }
 
   @Post()
+  @HttpCode(202)
   @Idempotent(placeOrderIdempotencyOptions)
   @ApiOperation({ summary: 'Place a new order' })
   @ApiHeader({
     name: 'Idempotency-Key',
     description:
-      'A unique UUID v4 recommended for idempotent operations. ' +
+      'A unique UUID v7 recommended for idempotent operations. ' +
       'Required for this operation',
     required: true,
     example: '550e8400-e29b-41d4-a716-446655440000',
