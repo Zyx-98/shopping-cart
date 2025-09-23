@@ -5,6 +5,5 @@ export class ReservedInventoryForOrderV2Command {
   constructor(
     public readonly orderId: OrderId,
     public readonly orderLine: Pick<OrderLine, 'productId' | 'quantity'>,
-    public readonly isLastRetry: boolean = false,
   ) {}
 }

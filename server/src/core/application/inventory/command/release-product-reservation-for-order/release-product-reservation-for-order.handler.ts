@@ -1,16 +1,20 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { ReleaseProductReservationForOrderCommand } from './release-product-reservation-for-order.command';
 import { Inject, Logger, NotFoundException } from '@nestjs/common';
-import {
-  IUnitOfWork,
-  UNIT_OF_WORK,
-} from 'src/core/domain/port/unit-of-work.interface';
-import { InventoryId } from 'src/core/domain/inventory/value-object/inventory-id.vo';
-import { Version } from 'src/core/domain/shared/domain/value-object/version.vo';
-import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
-import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
 import { ReleasedProductReservationForOrderEvent } from '../../event/released-product-reservation-for-order.event';
+import {
+  CACHE_SERVICE,
+  ICacheService,
+} from 'src/core/application/port/cache.interface';
+import { SagaInstanceRepository } from 'src/infrastructure/persistence/typeorm/repositories/saga-instance.repository';
+import { SAGA_INSTANCE_REPOSITORY } from 'src/core/domain/saga/repository/saga-instance.repository';
+import {
+  IQueueService,
+  QUEUE_SERVICE,
+  QueueJobName,
+  QueueType,
+} from 'src/core/application/port/queue.service';
 
 @CommandHandler(ReleaseProductReservationForOrderCommand)
 export class ReleaseProductReservationForOrderHandler
@@ -21,9 +25,13 @@ export class ReleaseProductReservationForOrderHandler
   );
 
   constructor(
-    @Inject(UNIT_OF_WORK)
-    private readonly unitOfWork: IUnitOfWork,
     private readonly eventBus: EventBus,
+    @Inject(CACHE_SERVICE)
+    private readonly cacheService: ICacheService,
+    @Inject(SAGA_INSTANCE_REPOSITORY)
+    private readonly sagaInstanceRepository: SagaInstanceRepository,
+    @Inject(QUEUE_SERVICE)
+    private readonly queueService: IQueueService,
   ) {}
 
   async execute(
@@ -31,62 +39,50 @@ export class ReleaseProductReservationForOrderHandler
   ): Promise<void> {
     const { orderId } = command;
 
-    await this.unitOfWork.execute(async () => {
-      const { sagaInstanceRepository, inventoryRepository } = this.unitOfWork;
+    const sagaInstance =
+      await this.sagaInstanceRepository.findByCorrelationId(orderId);
 
-      const sagaInstance =
-        await sagaInstanceRepository.findByCorrelationId(orderId);
-
-      if (!sagaInstance) {
-        throw new NotFoundException(
-          `Cannot release inventory: No saga instance found for orderId: ${orderId.toValue()}`,
-        );
-      }
-
-      const reservedOrderLines =
-        sagaInstance.getSuccessFullyReservedOrderLines();
-
-      const versionMap = new Map<InventoryId, Version>();
-
-      const inventories = await inventoryRepository.findAllByProductId(
-        reservedOrderLines.map(({ productId }) => ProductId.create(productId)),
+    if (!sagaInstance) {
+      throw new NotFoundException(
+        `Cannot release inventory: No saga instance found for orderId: ${orderId.toValue()}`,
       );
+    }
 
-      for (const inventory of inventories) {
-        const reservedOrderLine = reservedOrderLines.find(
-          ({ productId }) => inventory.productId.toValue() === productId,
-        );
+    const reservedOrderLines = sagaInstance.getSuccessFullyReservedOrderLines();
 
-        if (!reservedOrderLine) {
-          this.logger.warn(
-            `No order line for inventory: ${inventory.id.toValue()}`,
+    if (reservedOrderLines.length === 0) {
+      this.logger.warn(
+        `No reserved items to compensate for order ${orderId.toValue()}`,
+      );
+    } else {
+      const compensationTasks = reservedOrderLines.map(
+        ({ productId, quantity }) => {
+          const cacheKey = `inventory:product:${productId}`;
+          this.logger.log(
+            `Compensating ${quantity} for product ${productId} in Redis.`,
           );
-          continue;
-        }
-
-        inventory.addQuantity(Quantity.create(reservedOrderLine.quantity));
-        versionMap.set(inventory.id, inventory.version);
-        inventory.nextVersion();
-      }
-
-      const updatedRows = await inventoryRepository.persistManyWithVersion(
-        inventories,
-        versionMap,
+          return this.cacheService.compensateInventory(cacheKey, quantity);
+        },
       );
 
-      if (updatedRows !== inventories.length) {
-        this.logger.warn(
-          `Optimistic lock conflict for orderId: ${orderId.toValue()}`,
-        );
-      }
+      await Promise.all(compensationTasks);
+    }
 
-      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
+    sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
 
-      await sagaInstanceRepository.persist(sagaInstance);
+    await this.sagaInstanceRepository.persist(sagaInstance);
 
-      this.eventBus.publish(
-        new ReleasedProductReservationForOrderEvent(orderId),
+    for (const orderLine of reservedOrderLines) {
+      await this.queueService.addJob(
+        QueueType.INVENTORY,
+        QueueJobName.COMPENSATE_INVENTORY,
+        {
+          productId: orderLine.productId,
+          quantity: orderLine.quantity,
+        },
       );
-    });
+    }
+
+    this.eventBus.publish(new ReleasedProductReservationForOrderEvent(orderId));
   }
 }

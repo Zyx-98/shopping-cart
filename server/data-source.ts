@@ -18,7 +18,7 @@ export const dataSourceOptions: DataSourceOptions = {
   migrations: [
     join(
       __dirname,
-      'src/infrastructure/persistence/typeorm/migration/**/*{.ts,.js}',
+      'src/infrastructure/persistence/typeorm/migrations/**/*{.ts,.js}',
     ),
   ],
   synchronize: false,

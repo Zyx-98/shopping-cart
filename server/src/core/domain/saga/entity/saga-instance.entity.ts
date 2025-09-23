@@ -1,3 +1,5 @@
+import { ProductId } from '../../product/value-object/product-id.vo';
+import { Quantity } from '../../shared/domain/value-object/quantity.vo';
 import { SagaType } from '../enum/saga-type.enum';
 import { SagaTypeMap } from '../interface/saga-type-map.interface';
 import { CorrelationId } from '../value-object/correlation-id.vo';
@@ -148,8 +150,8 @@ export class SagaInstance<T extends SagaType> {
   }
 
   public getNextLineToReserve(): {
-    productId: string;
-    quantity: number;
+    productId: ProductId;
+    quantity: Quantity;
   } | null {
     if (this.sagaType !== SagaType.PLACE_ORDER) {
       throw new Error(
@@ -163,7 +165,10 @@ export class SagaInstance<T extends SagaType> {
 
     for (const orderLine of this.payload.orderLines) {
       if (!reservedProductIds.has(orderLine.productId)) {
-        return orderLine;
+        return {
+          productId: ProductId.create(orderLine.productId),
+          quantity: Quantity.create(orderLine.quantity),
+        };
       }
     }
 

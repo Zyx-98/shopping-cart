@@ -1,20 +1,21 @@
-import {
-  ConflictException,
-  Inject,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { CompensateOrderInventoryCommand } from './compensate-order-inventory.command';
-import {
-  IUnitOfWork,
-  UNIT_OF_WORK,
-} from 'src/core/domain/port/unit-of-work.interface';
 import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
-import { InventoryId } from 'src/core/domain/inventory/value-object/inventory-id.vo';
-import { Version } from 'src/core/domain/shared/domain/value-object/version.vo';
 import { CompensatedInventoryForOrderEvent } from '../../event/compensated-inventory-for-order.event';
+import { SagaInstanceRepository } from 'src/infrastructure/persistence/typeorm/repositories/saga-instance.repository';
+import {
+  CACHE_SERVICE,
+  ICacheService,
+} from 'src/core/application/port/cache.interface';
+import { SAGA_INSTANCE_REPOSITORY } from 'src/core/domain/saga/repository/saga-instance.repository';
+import {
+  IQueueService,
+  QUEUE_SERVICE,
+  QueueJobName,
+  QueueType,
+} from 'src/core/application/port/queue.service';
 
 @CommandHandler(CompensateOrderInventoryCommand)
 export class CompensateOrderInventoryHandler
@@ -23,70 +24,55 @@ export class CompensateOrderInventoryHandler
   private readonly logger = new Logger(CompensateOrderInventoryHandler.name);
 
   constructor(
-    @Inject(UNIT_OF_WORK)
-    private readonly unitOfWork: IUnitOfWork,
     private readonly eventBus: EventBus,
+    @Inject(SAGA_INSTANCE_REPOSITORY)
+    private readonly sagaInstanceRepository: SagaInstanceRepository,
+    @Inject(CACHE_SERVICE)
+    private readonly cacheService: ICacheService,
+    @Inject(QUEUE_SERVICE)
+    private readonly queueService: IQueueService,
   ) {}
 
   async execute(command: CompensateOrderInventoryCommand): Promise<void> {
     const { orderId, products } = command;
 
-    await this.unitOfWork.execute(async () => {
-      const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
-
-      const sagaInstance =
-        await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
-          orderId,
-        );
-
-      if (!sagaInstance) {
-        throw new NotFoundException(
-          `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
-        );
-      }
-
-      const inventories = await inventoryRepository.findAllByProductId(
-        products.map((product) => product.productId),
+    const compensationTasks = products.map((product) => {
+      const cacheKey = `inventory:product:${product.productId.toValue()}`;
+      this.logger.log(
+        `Compensating ${product.quantity.value} for product ${product.productId.toValue()} in Redis.`,
       );
-
-      const versionMap = new Map<InventoryId, Version>();
-
-      for (const inventory of inventories) {
-        const product = products.find((product) =>
-          product.productId.equals(inventory.productId),
-        );
-
-        if (!product) {
-          this.logger.error(
-            `Product not found for inventory: ${inventory.productId.toString()}`,
-          );
-          throw new NotFoundException(
-            `Product not found for inventory: ${inventory.productId.toString()}`,
-          );
-        }
-
-        inventory.addQuantity(product.quantity);
-        versionMap.set(inventory.id, inventory.version);
-        inventory.nextVersion();
-      }
-
-      const updatedRows = await inventoryRepository.persistManyWithVersion(
-        inventories,
-        versionMap,
+      return this.cacheService.compensateInventory(
+        cacheKey,
+        product.quantity.value,
       );
-
-      if (updatedRows !== inventories.length) {
-        this.logger.warn(
-          `Optimistic lock conflict for order ID: ${orderId.toValue()}. Will trigger retry.`,
-        );
-        throw new ConflictException(
-          'Inventory conflict detected. Please retry.',
-        );
-      }
-
-      sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
-      await sagaInstanceRepository.persist(sagaInstance);
     });
+
+    await Promise.all(compensationTasks);
+
+    const sagaInstance =
+      await this.sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+        orderId,
+      );
+
+    if (!sagaInstance) {
+      throw new NotFoundException(
+        `Cannot compensate inventory: No saga instance not found for orderId: ${orderId.toValue()}`,
+      );
+    }
+
+    sagaInstance.advanceStep(OrderProcessingSagaStep.INVENTORY_COMPENSATED);
+    await this.sagaInstanceRepository.persist(sagaInstance);
+
+    for (const product of products) {
+      await this.queueService.addJob(
+        QueueType.INVENTORY,
+        QueueJobName.COMPENSATE_INVENTORY,
+        {
+          productId: product.productId.toValue(),
+          quantity: product.quantity.value,
+        },
+      );
+    }
 
     this.eventBus.publish(new CompensatedInventoryForOrderEvent(orderId));
   }

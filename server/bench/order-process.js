@@ -124,7 +124,7 @@ export default function (data) {
       r.json() && r.json().uuid !== undefined,
   });
 
-  // orderDetailPolling(headers, res.json().uuid);
+  orderDetailPolling(headers, res.json().uuid);
 
   sleep(1);
 }

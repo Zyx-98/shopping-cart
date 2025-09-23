@@ -6,10 +6,12 @@ import {
   QueueJobName,
   QueueType,
 } from 'src/core/application/port/queue.service';
+import { JobRepository } from '../persistence/typeorm/repositories/queue.repository';
 
 export class BullQueueService implements IQueueService {
   constructor(
     @InjectQueue('inventory') private readonly inventoryQueue: Queue,
+    private readonly jobRepository: JobRepository,
   ) {}
   async addJob<T extends QueueJobName>(
     jobType: QueueType,
@@ -18,7 +20,9 @@ export class BullQueueService implements IQueueService {
   ): Promise<void> {
     switch (jobType) {
       case QueueType.INVENTORY:
-        await this.inventoryQueue.add(jobName, data);
+        await this.jobRepository.store(() =>
+          this.inventoryQueue.add(jobName, data),
+        );
         break;
       default:
         break;

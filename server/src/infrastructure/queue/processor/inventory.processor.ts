@@ -1,31 +1,27 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnQueueEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
 import { Job } from 'bullmq';
-import { CompensateOrderInventoryCommand } from 'src/core/application/inventory/command/compensate-order-inventory./compensate-order-inventory.command';
-import { ReleaseProductReservationForOrderCommand } from 'src/core/application/inventory/command/release-product-reservation-for-order/release-product-reservation-for-order.command';
-import { ReservedInventoryForOrderV2Command } from 'src/core/application/inventory/command/reserve-inventory-for-order-v2/reserve-inventory-for-order-v2.command';
-import { ReserveInventoryForOrderCommand } from 'src/core/application/inventory/command/reserve-inventory-for-order/reserve-inventory-for-order.command';
 import {
+  JobStatus,
   QueueJobData,
   QueueJobName,
   QueueType,
 } from 'src/core/application/port/queue.service';
 import {
-  IOrderRepository,
-  ORDER_REPOSITORY,
-} from 'src/core/domain/order/repository/order.repository';
-import { OrderId } from 'src/core/domain/order/value-object/order-id.vo';
+  IInventoryRepository,
+  INVENTORY_REPOSITORY,
+} from 'src/core/domain/inventory/repository/inventory.repository';
 import { ProductId } from 'src/core/domain/product/value-object/product-id.vo';
 import { Quantity } from 'src/core/domain/shared/domain/value-object/quantity.vo';
+import { JobRepository } from 'src/infrastructure/persistence/typeorm/repositories/queue.repository';
 
 @Processor(QueueType.INVENTORY, { concurrency: 1 })
 export class InventoryProcessor extends WorkerHost {
   private readonly logger = new Logger(InventoryProcessor.name);
   constructor(
-    @Inject(ORDER_REPOSITORY)
-    private readonly orderRepository: IOrderRepository,
-    private readonly commandBus: CommandBus,
+    private readonly jobRepository: JobRepository,
+    @Inject(INVENTORY_REPOSITORY)
+    private readonly inventoryRepository: IInventoryRepository,
   ) {
     super();
   }
@@ -41,10 +37,6 @@ export class InventoryProcessor extends WorkerHost {
         return this.handleReserveInventory(job);
       case QueueJobName.COMPENSATE_INVENTORY:
         return this.handleCompensateInventory(job);
-      case QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT:
-        return this.handleReserveInventoryWithSingleProduct(job);
-      case QueueJobName.RELEASE_PRODUCT_RESERVATION:
-        return this.handleReleaseProductReservation(job);
       default:
         break;
     }
@@ -53,66 +45,51 @@ export class InventoryProcessor extends WorkerHost {
   async handleReserveInventory(
     job: Job<QueueJobData[QueueJobName.RESERVE_INVENTORY]>,
   ) {
-    const { orderId, orderLines } = job.data;
+    const { productId, quantity } = job.data;
 
-    await this.commandBus.execute(
-      new ReserveInventoryForOrderCommand(
-        OrderId.create(orderId),
-        orderLines.map((orderLine) => ({
-          productId: ProductId.create(orderLine.productId),
-          quantity: Quantity.create(orderLine.quantity),
-        })),
-      ),
+    const inventory = await this.inventoryRepository.findByUniqueId(
+      ProductId.create(productId),
     );
-  }
 
-  async handleReserveInventoryWithSingleProduct(
-    job: Job<QueueJobData[QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT]>,
-  ) {
-    const { orderId, orderLine } = job.data;
+    if (!inventory) {
+      throw new Error(`Inventory not found for productId: ${productId}`);
+    }
 
-    await this.commandBus.execute(
-      new ReservedInventoryForOrderV2Command(
-        OrderId.create(orderId),
-        {
-          productId: ProductId.create(orderLine.productId),
-          quantity: Quantity.create(orderLine.quantity),
-        },
-        job.attemptsMade === 4,
-      ),
-    );
+    inventory.removeQuantity(Quantity.create(quantity));
+
+    await this.inventoryRepository.persist(inventory);
   }
 
   async handleCompensateInventory(
     job: Job<QueueJobData[QueueJobName.COMPENSATE_INVENTORY]>,
   ) {
-    const { orderId } = job.data;
+    const { productId, quantity } = job.data;
 
-    const order = await this.orderRepository.findById(OrderId.create(orderId));
+    const inventory = await this.inventoryRepository.findByUniqueId(
+      ProductId.create(productId),
+    );
 
-    if (!order) {
-      this.logger.error(`Order with ID ${orderId} not found`);
-      throw new Error(`Order with ID ${orderId} not found`);
+    if (!inventory) {
+      throw new Error(`Inventory not found for productId: ${productId}`);
     }
 
-    await this.commandBus.execute(
-      new CompensateOrderInventoryCommand(
-        order.id,
-        order.orderLines.map((line) => ({
-          productId: line.productId,
-          quantity: line.quantity,
-        })),
-      ),
-    );
+    inventory.addQuantity(Quantity.create(quantity));
+
+    await this.inventoryRepository.persist(inventory);
   }
 
-  async handleReleaseProductReservation(
-    job: Job<QueueJobData[QueueJobName.RELEASE_PRODUCT_RESERVATION]>,
-  ) {
-    const { orderId } = job.data;
+  @OnQueueEvent('active')
+  async onActive(job: Job) {
+    await this.jobRepository.updateStatus(String(job.id), JobStatus.ACTIVE);
+  }
 
-    await this.commandBus.execute(
-      new ReleaseProductReservationForOrderCommand(OrderId.create(orderId)),
-    );
+  @OnQueueEvent('completed')
+  async onCompleted(job: Job, _result: any) {
+    await this.jobRepository.updateStatus(String(job.id), JobStatus.COMPLETED);
+  }
+
+  @OnQueueEvent('failed')
+  async onFailed(job: Job, _err: Error) {
+    await this.jobRepository.updateStatus(String(job.id), JobStatus.FAILED);
   }
 }

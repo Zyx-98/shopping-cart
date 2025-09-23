@@ -39,6 +39,8 @@ import { SagaInstanceSchema } from './entities/saga-instance.schema';
 import { PersistenceSagaInstanceMapper } from './mappers/persistence-saga-instance.mapper';
 import { SAGA_INSTANCE_REPOSITORY } from 'src/core/domain/saga/repository/saga-instance.repository';
 import { SagaInstanceRepository } from './repositories/saga-instance.repository';
+import { JobSchema } from './entities/jobs.schema';
+import { JobRepository } from './repositories/queue.repository';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { SagaInstanceRepository } from './repositories/saga-instance.repository'
       OrderSchema,
       OrderLineSchema,
       SagaInstanceSchema,
+      JobSchema,
     ]),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     TypeormQueryBuilderModule,
@@ -104,6 +107,7 @@ import { SagaInstanceRepository } from './repositories/saga-instance.repository'
       useClass: TypeOrmUnitOfWork,
       scope: Scope.REQUEST,
     },
+    JobRepository,
   ],
   exports: [
     USER_REPOSITORY,
@@ -115,6 +119,7 @@ import { SagaInstanceRepository } from './repositories/saga-instance.repository'
     PAYMENT_REPOSITORY,
     SAGA_INSTANCE_REPOSITORY,
     UNIT_OF_WORK,
+    JobRepository,
     TypeormQueryBuilderModule,
   ],
 })

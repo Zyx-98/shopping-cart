@@ -41,12 +41,12 @@ export class CreateSagaInstancesTable1749270018489
           },
           {
             name: 'created_at',
-            type: 'timestamptz',
+            type: 'timestamp with time zone',
             default: 'now()',
           },
           {
             name: 'updated_at',
-            type: 'timestamptz',
+            type: 'timestamp with time zone',
             default: 'now()',
           },
         ],

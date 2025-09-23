@@ -4,25 +4,25 @@ export enum QueueType {
 
 export enum QueueJobName {
   RESERVE_INVENTORY = 'reserve-inventory',
-  RESERVE_INVENTORY_WITH_SINGLE_PRODUCT = 'reserve-inventory-with-single-product',
   COMPENSATE_INVENTORY = 'compensate-inventory',
-  RELEASE_PRODUCT_RESERVATION = 'release_product_reservation',
+}
+
+export enum JobStatus {
+  WAITING = 'waiting',
+  ACTIVE = 'active',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  DELAYED = 'delayed',
 }
 
 export interface QueueJobData {
   [QueueJobName.RESERVE_INVENTORY]: {
-    orderId: string;
-    orderLines: Array<{ productId: string; quantity: number }>;
+    productId: string;
+    quantity: number;
   };
   [QueueJobName.COMPENSATE_INVENTORY]: {
-    orderId: string;
-  };
-  [QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT]: {
-    orderId: string;
-    orderLine: { productId: string; quantity: number };
-  };
-  [QueueJobName.RELEASE_PRODUCT_RESERVATION]: {
-    orderId: string;
+    productId: string;
+    quantity: number;
   };
 }
 

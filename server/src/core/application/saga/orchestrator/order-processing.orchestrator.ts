@@ -1,6 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ofType, Saga } from '@nestjs/cqrs';
-import { concatMap, filter, map, Observable, of, tap } from 'rxjs';
+import { concatMap, map, Observable, of } from 'rxjs';
 import { InitiatePaymentCommand } from '../../payment/command/initiate-payment/initiate-payment.command';
 import { OrderCreatedEvent } from 'src/core/domain/order/event/order-created.event';
 import { OrderInventoryReservationFailedEvent } from '../../inventory/event/order-inventory-reservation-failed.event';
@@ -14,46 +14,27 @@ import { CancelOrderCommand } from '../../order/command/cancel-order/cancel-orde
 import { PaymentPaidEvent } from 'src/core/domain/payment/event/payment-paid.event';
 import { MarkOrderAsCompleteCommand } from '../../order/command/mark-order-as-complete/mark-order-as-complete.command';
 import { PaymentInitiatedForOrderEvent } from '../../payment/event/payment-initiated-for-order.event';
-import {
-  IQueueService,
-  QUEUE_SERVICE,
-  QueueJobName,
-  QueueType,
-} from '../../port/queue.service';
 import { CompensatedInventoryForOrderEvent } from '../../inventory/event/compensated-inventory-for-order.event';
 import { ProductReservationSucceededForOrderEvent } from '../../inventory/event/product-reservation-succeeded-for-order.event';
 import { ReleasedProductReservationForOrderEvent } from '../../inventory/event/released-product-reservation-for-order.event';
+import { ReservedInventoryForOrderV2Command } from '../../inventory/command/reserve-inventory-for-order-v2/reserve-inventory-for-order-v2.command';
+import { ReleaseProductReservationForOrderCommand } from '../../inventory/command/release-product-reservation-for-order/release-product-reservation-for-order.command';
+import { CompensateOrderInventoryCommand } from '../../inventory/command/compensate-order-inventory./compensate-order-inventory.command';
 
 @Injectable()
 export class OrderProcessingOrchestrator {
   private readonly logger = new Logger(OrderProcessingOrchestrator.name);
-  constructor(
-    @Inject(QUEUE_SERVICE) private readonly queueService: IQueueService,
-  ) {}
 
   @Saga()
   orderCreated = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(OrderCreatedEvent),
-      tap((event) => {
-        this.logger.log(
-          `Reserving inventory for order ID: ${event.orderId.toString()}`,
-        );
-
-        void this.queueService.addJob(
-          QueueType.INVENTORY,
-          QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT,
-          {
-            orderId: event.orderId.toValue(),
-            orderLine: {
-              productId: event.orderLines[0].productId.toValue(),
-              quantity: event.orderLines[0].quantity.value,
-            },
-          },
+      map((event) => {
+        return new ReservedInventoryForOrderV2Command(
+          event.orderId,
+          event.orderLines[0],
         );
       }),
-      map(() => ({ type: 'SAGA_STEP_QUEUED' })),
-      filter(() => false),
     );
   };
 
@@ -61,23 +42,11 @@ export class OrderProcessingOrchestrator {
   productReserved = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(ProductReservationSucceededForOrderEvent),
-      tap((event) => {
+      map((event) => {
         const { orderId, nextOrderLine } = event;
 
-        void this.queueService.addJob(
-          QueueType.INVENTORY,
-          QueueJobName.RESERVE_INVENTORY_WITH_SINGLE_PRODUCT,
-          {
-            orderId: orderId.toValue(),
-            orderLine: {
-              productId: nextOrderLine.productId,
-              quantity: nextOrderLine.quantity,
-            },
-          },
-        );
+        return new ReservedInventoryForOrderV2Command(orderId, nextOrderLine);
       }),
-      map(() => ({ type: 'SAGA_STEP_QUEUE' })),
-      filter(() => false),
     );
   };
 
@@ -114,17 +83,9 @@ export class OrderProcessingOrchestrator {
   ): Observable<any> => {
     return events$.pipe(
       ofType(OrderInventoryReservationFailedEvent),
-      tap((event) => {
-        void this.queueService.addJob(
-          QueueType.INVENTORY,
-          QueueJobName.RELEASE_PRODUCT_RESERVATION,
-          {
-            orderId: event.orderId.toString(),
-          },
-        );
+      map((event) => {
+        return new ReleaseProductReservationForOrderCommand(event.orderId);
       }),
-      map(() => ({ type: 'SAGA_STEP_QUEUED' })),
-      filter(() => false),
     );
   };
 
@@ -142,17 +103,12 @@ export class OrderProcessingOrchestrator {
   orderCanceled = (events$: Observable<any>): Observable<any> => {
     return events$.pipe(
       ofType(OrderCanceledEvent),
-      tap((event) => {
-        void this.queueService.addJob(
-          QueueType.INVENTORY,
-          QueueJobName.COMPENSATE_INVENTORY,
-          {
-            orderId: event.orderId.toString(),
-          },
+      map((event) => {
+        return new CompensateOrderInventoryCommand(
+          event.orderId,
+          event.orderLines,
         );
       }),
-      map(() => ({ type: 'SAGA_STEP_QUEUED' })),
-      filter(() => false),
     );
   };
 
@@ -191,7 +147,7 @@ export class OrderProcessingOrchestrator {
           `Handling payment success for order ID: ${event.orderId.toString()}`,
         );
 
-        new MarkOrderAsCompleteCommand(event.orderId);
+        return new MarkOrderAsCompleteCommand(event.orderId);
       }),
     );
   };

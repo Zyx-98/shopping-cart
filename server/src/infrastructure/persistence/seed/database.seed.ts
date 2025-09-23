@@ -48,7 +48,7 @@ async function seed() {
 async function truncateAllTables(queryRunner: QueryRunner) {
   // Get all table names from the current schema
   const tables = await queryRunner.query(`
-    SELECT tablename FROM pg_tables WHERE schemaname = 'public';
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public' and tablename <> 'typeorm_migrations';
   `);
 
   const tableNames = tables.map((row) => `"${row.tablename}"`).join(', ');
