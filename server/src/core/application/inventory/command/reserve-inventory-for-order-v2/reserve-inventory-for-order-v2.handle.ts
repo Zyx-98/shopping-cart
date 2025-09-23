@@ -1,22 +1,23 @@
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { ReservedInventoryForOrderV2Command } from './reserve-inventory-for-order-v2.command';
-import {
-  IUnitOfWork,
-  UNIT_OF_WORK,
-} from 'src/core/domain/port/unit-of-work.interface';
-import {
-  ConflictException,
-  Inject,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Logger, NotFoundException } from '@nestjs/common';
 import { SagaType } from 'src/core/domain/saga/enum/saga-type.enum';
-import { InventoryId } from 'src/core/domain/inventory/value-object/inventory-id.vo';
-import { Version } from 'src/core/domain/shared/domain/value-object/version.vo';
 import { OrderProcessingSagaStep } from 'src/core/domain/saga/enum/order-processing-saga-step.enum';
 import { ProductReservationSucceededForOrderEvent } from '../../event/product-reservation-succeeded-for-order.event';
 import { OrderInventoryReservedEvent } from '../../event/order-inventory-reserved.event';
 import { OrderInventoryReservationFailedEvent } from '../../event/order-inventory-reservation-failed.event';
+import {
+  CACHE_SERVICE,
+  ICacheService,
+} from 'src/core/application/port/cache.interface';
+import { SagaInstanceRepository } from 'src/infrastructure/persistence/typeorm/repositories/saga-instance.repository';
+import { SAGA_INSTANCE_REPOSITORY } from 'src/core/domain/saga/repository/saga-instance.repository';
+import {
+  IQueueService,
+  QUEUE_SERVICE,
+  QueueJobName,
+  QueueType,
+} from 'src/core/application/port/queue.service';
 
 @CommandHandler(ReservedInventoryForOrderV2Command)
 export class ReservedInventoryForOrderV2Handler
@@ -27,106 +28,82 @@ export class ReservedInventoryForOrderV2Handler
   );
 
   constructor(
-    @Inject(UNIT_OF_WORK)
-    public readonly unitOfWork: IUnitOfWork,
-    public readonly eventBus: EventBus,
+    private readonly eventBus: EventBus,
+    @Inject(CACHE_SERVICE)
+    private readonly cacheService: ICacheService,
+    @Inject(SAGA_INSTANCE_REPOSITORY)
+    private readonly sagaInstanceRepository: SagaInstanceRepository,
+    @Inject(QUEUE_SERVICE)
+    private readonly queueService: IQueueService,
   ) {}
 
   async execute(command: ReservedInventoryForOrderV2Command): Promise<void> {
-    const { orderId, orderLine, isLastRetry } = command;
+    const { orderId, orderLine } = command;
+    const cacheKey = `inventory:product:${orderLine.productId.toString()}`;
 
     try {
-      await this.unitOfWork.execute(async () => {
-        const { inventoryRepository, sagaInstanceRepository } = this.unitOfWork;
+      const newStockLevel = await this.cacheService.reserveInventory(
+        cacheKey,
+        orderLine.quantity.value,
+      );
 
-        const sagaInstance =
-          await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
-            orderId,
-          );
-
-        if (!sagaInstance) {
-          throw new NotFoundException(`
-               Cannot reserve inventory: No saga instance found for orderId: ${orderId.toValue()} 
-        `);
-        }
-
-        const inventory = await inventoryRepository.findByUniqueId(
-          orderLine.productId,
-        );
-
-        if (!inventory) {
-          throw new NotFoundException(
-            `Cannot reserve inventory: No inventory found for productId: ${orderLine.productId.toValue()}`,
-          );
-        }
-
-        const versionMap = new Map<InventoryId, Version>();
-
-        inventory.removeQuantity(orderLine.quantity);
-        versionMap.set(inventory.id, inventory.version);
-        inventory.nextVersion();
-
-        const updatedRows = await inventoryRepository.persistManyWithVersion(
-          [inventory],
-          versionMap,
-        );
-
-        if (updatedRows < 1) {
-          throw new ConflictException(
-            `Inventory conflict detected. Please retry.`,
-          );
-        }
-
-        sagaInstance.markLineAsReserve({
-          productId: orderLine.productId.toValue(),
-          quantity: orderLine.quantity.value,
-        });
-
-        const nextOrderLine = sagaInstance.getNextLineToReserve();
-
-        const sagaStep = nextOrderLine
-          ? OrderProcessingSagaStep.INVENTORY_RESERVING
-          : OrderProcessingSagaStep.INVENTORY_RESERVED;
-
-        sagaInstance.advanceStep(sagaStep);
-
-        await sagaInstanceRepository.persist(sagaInstance);
-
-        if (!nextOrderLine) {
-          this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
-        } else {
-          this.eventBus.publish(
-            new ProductReservationSucceededForOrderEvent(
-              orderId,
-              nextOrderLine,
-            ),
-          );
-        }
-      });
-    } catch (error) {
-      if (!(error instanceof ConflictException) || isLastRetry) {
-        await this.unitOfWork.execute(async () => {
-          const { sagaInstanceRepository } = this.unitOfWork;
-
-          const sagaInstance =
-            await sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
-              orderId,
-            );
-
-          if (sagaInstance) {
-            sagaInstance.fail(
-              error?.message,
-              OrderProcessingSagaStep.INVENTORY_RESERVE_FAILED,
-            );
-            await sagaInstanceRepository.persist(sagaInstance);
-          }
-        });
-
+      if (newStockLevel < 0) {
         this.eventBus.publish(
           new OrderInventoryReservationFailedEvent(orderId),
         );
+
+        return;
       }
 
+      const sagaInstance =
+        await this.sagaInstanceRepository.findByCorrelationId<SagaType.PLACE_ORDER>(
+          orderId,
+        );
+
+      if (!sagaInstance) {
+        throw new NotFoundException(`
+               Cannot reserve inventory: No saga instance found for orderId: ${orderId.toValue()} 
+        `);
+      }
+
+      sagaInstance.markLineAsReserve({
+        productId: orderLine.productId.toValue(),
+        quantity: orderLine.quantity.value,
+      });
+
+      const nextOrderLine = sagaInstance.getNextLineToReserve();
+
+      const sagaStep = nextOrderLine
+        ? OrderProcessingSagaStep.INVENTORY_RESERVING
+        : OrderProcessingSagaStep.INVENTORY_RESERVED;
+
+      sagaInstance.advanceStep(sagaStep);
+
+      await this.sagaInstanceRepository.persist(sagaInstance);
+
+      await this.queueService.addJob(
+        QueueType.INVENTORY,
+        QueueJobName.RESERVE_INVENTORY,
+        {
+          productId: orderLine.productId.toValue(),
+          quantity: orderLine.quantity.value,
+        },
+      );
+
+      if (!nextOrderLine) {
+        this.eventBus.publish(new OrderInventoryReservedEvent(orderId));
+      } else {
+        this.eventBus.publish(
+          new ProductReservationSucceededForOrderEvent(orderId, nextOrderLine),
+        );
+      }
+    } catch (error) {
+      await this.cacheService.compensateInventory(
+        cacheKey,
+        orderLine.quantity.value,
+      );
+
+      this.eventBus.publish(new OrderInventoryReservationFailedEvent(orderId));
       throw error;
     }
   }

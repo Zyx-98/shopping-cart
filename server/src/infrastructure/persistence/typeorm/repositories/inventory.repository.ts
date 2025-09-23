@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InventoryAggregate } from 'src/core/domain/inventory/aggregate/inventory.aggregate';
 import { IInventoryRepository } from 'src/core/domain/inventory/repository/inventory.repository';
 import { UniqueEntityId } from 'src/core/domain/shared/domain/value-object/unique-entity-id.vo';
-import { QueryCriteria } from 'src/core/domain/shared/types/pagination.type';
 import { InventorySchema } from '../entities/inventory.schema';
 import { In, Repository } from 'typeorm';
 import { PersistenceInventoryMapper } from '../mappers/persistence-inventory.mapper';
@@ -79,8 +78,10 @@ export class InventoryRepository implements IInventoryRepository {
     return totalAffectedRows;
   }
 
-  findAll(_criteria: QueryCriteria): Promise<InventoryAggregate[]> {
-    throw new Error('Method not implemented.');
+  async findAll(): Promise<InventoryAggregate[]> {
+    const schemas = await this.ormRepository.find();
+
+    return schemas.map((schema) => this.mapper.toDomain(schema));
   }
 
   async findById(id: UniqueEntityId): Promise<InventoryAggregate | null> {

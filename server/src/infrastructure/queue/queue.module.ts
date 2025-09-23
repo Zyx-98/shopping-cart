@@ -7,6 +7,7 @@ import {
 } from 'src/core/application/port/queue.service';
 import { BullQueueService } from './bull-queue.service';
 import { InventoryProcessor } from './processor/inventory.processor';
+import { QueueLoaderService } from './queue-loader.service';
 
 @Global()
 @Module({
@@ -38,7 +39,8 @@ import { InventoryProcessor } from './processor/inventory.processor';
       useClass: BullQueueService,
     },
     InventoryProcessor,
+    QueueLoaderService,
   ],
-  exports: [QUEUE_SERVICE],
+  exports: [QUEUE_SERVICE, QueueLoaderService],
 })
 export class QueueModule {}

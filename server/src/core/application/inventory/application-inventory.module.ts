@@ -3,6 +3,8 @@ import { ReserveInventoryForOrderHandler } from './command/reserve-inventory-for
 import { CompensateOrderInventoryHandler } from './command/compensate-order-inventory./compensate-order-inventory.handler';
 import { GetInventoriesByProductIdsHandler } from './query/get-inventories-by-product-ids/get-inventories-by-product-ids.handler';
 import { ReservedInventoryForOrderV2Handler } from './command/reserve-inventory-for-order-v2/reserve-inventory-for-order-v2.handle';
+import { InventoryLoaderService } from './service/inventory-loader.service';
+import { ReleaseProductReservationForOrderHandler } from './command/release-product-reservation-for-order/release-product-reservation-for-order.handler';
 
 @Module({
   providers: [
@@ -10,12 +12,16 @@ import { ReservedInventoryForOrderV2Handler } from './command/reserve-inventory-
     CompensateOrderInventoryHandler,
     GetInventoriesByProductIdsHandler,
     ReservedInventoryForOrderV2Handler,
+    ReleaseProductReservationForOrderHandler,
+    InventoryLoaderService,
   ],
   exports: [
     ReserveInventoryForOrderHandler,
     CompensateOrderInventoryHandler,
     GetInventoriesByProductIdsHandler,
     ReservedInventoryForOrderV2Handler,
+    ReleaseProductReservationForOrderHandler,
+    InventoryLoaderService,
   ],
 })
 export class ApplicationInventoryModule {}
